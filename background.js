@@ -1,6 +1,36 @@
 // Store active timers
 const activeTimers = {};
 
+// Initialize active timers on service worker startup
+function initializeTimers() {
+  chrome.alarms.getAll((alarms) => {
+    alarms.forEach((alarm) => {
+      if (alarm.name.startsWith("closeTab_")) {
+        const tabId = parseInt(alarm.name.split("_")[1]);
+        // Calculate remaining time based on alarm's scheduled time
+        const endTime = alarm.scheduledTime;
+        const duration = (endTime - Date.now()) / 1000; // in seconds
+
+        // Store timer info
+        activeTimers[tabId] = {
+          startTime: Date.now() - duration * 1000,
+          duration: duration,
+          endTime: endTime,
+        };
+
+        console.log(
+          `Restored timer for tab ${tabId}, remaining time: ${Math.floor(
+            duration
+          )} seconds`
+        );
+      }
+    });
+  });
+}
+
+// Call initialization
+initializeTimers();
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startTimer") {
     const { tabId, duration } = request;
@@ -74,6 +104,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Return all active timers
     sendResponse({ success: true, timers: activeTimers });
     return true;
+  }
+});
+
+// Add tab removed listener to clean up timers for closed tabs
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  if (activeTimers[tabId]) {
+    chrome.alarms.clear("closeTab_" + tabId);
+    delete activeTimers[tabId];
+    console.log(`Tab ${tabId} was closed manually, timer cleared`);
   }
 });
 

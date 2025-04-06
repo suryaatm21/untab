@@ -108,8 +108,9 @@ function loadSettings() {
 
 // Save settings
 function saveSettings() {
-  const defaultCurrentTab = document.getElementById("default-current-tab")
-    .checked;
+  const defaultCurrentTab = document.getElementById(
+    "default-current-tab"
+  ).checked;
   chrome.storage.sync.set({ defaultCurrentTab: defaultCurrentTab });
 }
 
@@ -143,17 +144,55 @@ document.addEventListener("DOMContentLoaded", () => {
       // Find any active timer and display it
       const activeTimers = response.timers;
       if (Object.keys(activeTimers).length > 0) {
-        // Just display the first active timer found (can be enhanced later)
-        const tabId = Object.keys(activeTimers)[0];
-        const timer = activeTimers[tabId];
-        targetTabId = parseInt(tabId);
+        // Get all active timer IDs
+        const timerIds = Object.keys(activeTimers);
 
-        const now = Date.now();
-        const remainingTime = Math.max(
-          0,
-          Math.ceil((timer.endTime - now) / 1000)
+        // First check if current tab has a timer
+        chrome.tabs.query(
+          { active: true, currentWindow: true },
+          function (tabs) {
+            if (tabs.length > 0) {
+              const currentTabId = tabs[0].id.toString();
+
+              if (timerIds.includes(currentTabId)) {
+                // Current tab has a timer, show it
+                const timer = activeTimers[currentTabId];
+                targetTabId = parseInt(currentTabId);
+
+                const now = Date.now();
+                const remainingTime = Math.max(
+                  0,
+                  Math.ceil((timer.endTime - now) / 1000)
+                );
+                showActiveTimer(remainingTime);
+
+                // Update tab selector to show current tab
+                document.getElementById("tab-select").value = "current";
+                return;
+              }
+            }
+
+            // If we get here, current tab doesn't have a timer
+            // Just display the first active timer found
+            const firstTimerId = timerIds[0];
+            const timer = activeTimers[firstTimerId];
+            targetTabId = parseInt(firstTimerId);
+
+            const now = Date.now();
+            const remainingTime = Math.max(
+              0,
+              Math.ceil((timer.endTime - now) / 1000)
+            );
+            showActiveTimer(remainingTime);
+
+            // Update tab selector to show the tab with the timer
+            document.getElementById("tab-select").value = firstTimerId;
+
+            // Show notification that timer is for a different tab
+            document.getElementById("status").textContent =
+              "Timer active for different tab";
+          }
         );
-        showActiveTimer(remainingTime);
       }
     }
   });
@@ -205,6 +244,9 @@ function startTimerForTab(tabId, duration) {
         // Setup visual countdown
         clearInterval(countdownInterval);
         showActiveTimer(duration);
+
+        // Store the tab ID of the timer for the popup
+        chrome.storage.local.set({ currentTimerTabId: tabId });
       } else {
         document.getElementById("status").textContent = "Error setting timer.";
         console.error(
@@ -234,6 +276,9 @@ document.getElementById("stopTimer").addEventListener("click", () => {
           hideTimerUI();
           document.getElementById("status").textContent = "Timer stopped";
           targetTabId = null;
+
+          // Clear stored timer tab ID
+          chrome.storage.local.remove("currentTimerTabId");
         } else {
           const errorMsg = response ? response.error : "Unknown error";
           document.getElementById("status").textContent =
