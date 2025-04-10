@@ -3,13 +3,23 @@
   "name": "Fade That",
   "version": "1.0",
   "description": "Closes the current tab after a set timer to help manage media consumption.",
-  "permissions": ["tabs", "alarms", "storage"],
+  "permissions": ["tabs", "alarms", "storage", "notifications"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/Icon 1.png",
+      "48": "icons/Icon 2.png",
+      "128": "icons/Icon 3.png"
+    }
+  },
+  "icons": {
+    "16": "icons/Icon 1.png",
+    "48": "icons/Icon 2.png",
+    "128": "icons/Icon 3.png"
   }
 }
