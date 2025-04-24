@@ -28,12 +28,15 @@ class NotificationManager {
             return;
           }
 
+          // The error occurs because iconUrl is required but was commented out
+          // Let's create a default icon URL using the extension ID
+          const iconUrl = chrome.runtime.getURL("icons/Icon 3.png");
+
           let notificationOptions = {
             type: "basic",
-            // Commented out icon URL until icons are properly set up
-            // iconUrl: "icons/Icon 3.png",
-            title: title,
-            message: message,
+            iconUrl: iconUrl, // This is required
+            title: title || "Fade That", // Provide default title if missing
+            message: message || "Timer notification", // Provide default message if missing
             requireInteraction: true,
           };
 
@@ -48,8 +51,36 @@ class NotificationManager {
             notificationId,
             notificationOptions,
             (createdId) => {
-              console.log(`Created notification ${createdId} for tab ${tabId}`);
-              resolve(createdId);
+              if (chrome.runtime.lastError) {
+                console.error("Notification creation error:", chrome.runtime.lastError);
+                
+                // Fallback without buttons if there was an error
+                // Some Chrome versions/platforms don't support notification buttons
+                const fallbackOptions = {
+                  type: "basic",
+                  iconUrl: iconUrl,
+                  title: title || "Fade That",
+                  message: message + " (Use extension popup for timer control)",
+                  requireInteraction: true
+                };
+                
+                chrome.notifications.create(
+                  notificationId + "-fallback",
+                  fallbackOptions,
+                  (createdId) => {
+                    if (chrome.runtime.lastError) {
+                      console.error("Fallback notification error:", chrome.runtime.lastError);
+                      reject(chrome.runtime.lastError);
+                    } else {
+                      console.log(`Created fallback notification ${createdId} for tab ${tabId}`);
+                      resolve(createdId);
+                    }
+                  }
+                );
+              } else {
+                console.log(`Created notification ${createdId} for tab ${tabId}`);
+                resolve(createdId);
+              }
             }
           );
         });

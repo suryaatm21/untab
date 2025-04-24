@@ -197,3 +197,15 @@ button:hover {
   background-color: #e8f0fe;
   border-left: 3px solid #4285f4;
 }
+
+.back-button {
+  display: none;
+  background-color: #9aa0a6;
+  margin-top: 10px;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.back-button:hover {
+  background-color: #80868b;
+}
