@@ -6,116 +6,87 @@ const activeTimers = {};
 // Create notification manager instance
 const notificationManager = new NotificationManager();
 
-// Initialize active timers on service worker startup
-function initializeTimers() {
-  chrome.alarms.getAll((alarms) => {
-    alarms.forEach((alarm) => {
-      if (alarm.name.startsWith("closeTab_")) {
-        const tabId = parseInt(alarm.name.split("_")[1]);
-        // Calculate remaining time based on alarm's scheduled time
-        const endTime = alarm.scheduledTime;
-        const duration = (endTime - Date.now()) / 1000; // in seconds
-
-        // Store timer info
-        activeTimers[tabId] = {
-          startTime: Date.now() - duration * 1000,
-          duration: duration,
-          endTime: endTime,
-          paused: false,
-          remainingTime: duration,
-          warningTime: 60, // Default warning time
-          enableNotifications: true,
-          warningShown: false,
-        };
-
-        console.log(
-          `Restored timer for tab ${tabId}, remaining time: ${Math.floor(
-            duration
-          )} seconds`
-        );
-      }
-    });
+// Test notification function that now shows useful timer info
+function testNotification() {
+  console.log("Creating timer active notification");
+  const options = {
+    type: "basic",
+    iconUrl: chrome.runtime.getURL("icons/fade-that-monogram.png"),
+    title: "Fade That Timer Active",
+    message: "A tab timer is now active and counting down.",
+    requireInteraction: false
+  };
+  const notificationId = `timer-notification-${Date.now()}`;
+  chrome.notifications.create(notificationId, options, (id) => {
+    console.log("Created timer notification:", id);
+    if (chrome.runtime.lastError) {
+      console.error("Error creating timer notification:", chrome.runtime.lastError);
+    }
   });
 }
 
-// Check all active timers for warnings
-function checkTimersForWarnings() {
-  const now = Date.now();
-
-  for (const tabId in activeTimers) {
-    const timer = activeTimers[tabId];
-
-    // Skip paused timers
-    if (timer.paused) continue;
-
-    // If warning hasn't been shown and we're within warning threshold
-    if (
-      !timer.warningShown &&
-      timer.enableNotifications &&
-      timer.endTime - now <= timer.warningTime * 1000
-    ) {
-      // Calculate seconds left
-      const secondsLeft = Math.ceil((timer.endTime - now) / 1000);
-
-      // Create warning notification
-      notificationManager.createTimerWarningNotification(
-        parseInt(tabId),
-        secondsLeft
-      );
-
-      // Mark warning as shown
-      timer.warningShown = true;
-      console.log(
-        `Showed warning for tab ${tabId}, ${secondsLeft} seconds remaining`
-      );
+// Test notification function - more direct approach that might work better on macOS
+function forceTestNotification() {
+  console.log("Creating forced test notification with maximum priority");
+  
+  // Create a notification with maximum priority and different options
+  const options = {
+    type: "basic",
+    iconUrl: chrome.runtime.getURL("icons/fade-that-monogram.png"),
+    title: "Fade That - URGENT TEST",
+    message: "This is a high-priority test notification. Please check if this appears on your screen.",
+    priority: 2, // Maximum priority
+    requireInteraction: true,
+    silent: false
+  };
+  
+  chrome.notifications.create(
+    "forced-test-notification-" + Date.now(), // Unique ID every time
+    options,
+    (notificationId) => {
+      console.log("Created forced test notification:", notificationId);
+      if (chrome.runtime.lastError) {
+        console.error("Error creating forced test notification:", chrome.runtime.lastError);
+      }
     }
-  }
+  );
 }
 
-// Call initialization
-initializeTimers();
-
-// Start timer warning check interval
-setInterval(checkTimersForWarnings, 1000);
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "startTimer") {
-    const { tabId, duration, warningTime, enableNotifications } = request;
-    try {
-      // Store timer info
-      activeTimers[tabId] = {
-        startTime: Date.now(),
-        duration: duration,
-        endTime: Date.now() + duration * 1000,
-        paused: false,
-        remainingTime: duration,
-        warningTime: warningTime || 60,
-        enableNotifications: enableNotifications !== false,
-        warningShown: false,
-        tabTitle: request.tabTitle || "Unknown Tab",
-      };
+  if (request.action === 'startTimer') {
+    const { tabId, duration, warningTime, enableNotifications, tabTitle } = request;
+    // Store timer info
+    activeTimers[tabId] = { endTime: Date.now() + duration * 1000, warningTime, enableNotifications, tabTitle };
 
-      // Create alarm
-      chrome.alarms.create("closeTab_" + tabId, {
-        delayInMinutes: duration / 60,
-      });
+    // Clear existing alarms
+    chrome.alarms.clear('warnTab_' + tabId);
+    chrome.alarms.clear('closeTab_' + tabId);
 
-      // Show confirmation notification if enabled
-      if (enableNotifications) {
-        notificationManager.notifyTimerCreated(tabId, duration);
-      }
+    // Schedule warning alarm (delayInMinutes)
+    const warnDelayMin = Math.max(0, (duration - warningTime) / 60);
+    chrome.alarms.create('warnTab_' + tabId, { delayInMinutes: warnDelayMin });
 
-      console.log(
-        `Timer created for tab ${tabId}, duration: ${duration} seconds (${
-          duration / 60
-        } minutes)`
-      );
-      sendResponse({ success: true });
-    } catch (error) {
-      console.error("Error creating alarm:", error);
-      sendResponse({ success: false, error: error.message });
+    // Schedule close alarm (delayInMinutes)
+    chrome.alarms.create('closeTab_' + tabId, { delayInMinutes: duration / 60 });
+
+    console.log(`Scheduled warnTab alarm for tab ${tabId} in ${warnDelayMin} minutes, closeTab in ${duration/60} minutes`);
+
+    // Fire a test notification on start
+    testNotification();
+    if (enableNotifications) {
+      notificationManager.notifyTimerCreated(tabId, duration);
     }
-    return true; // Required for async response
+    sendResponse({ success: true });
+    return true;
+  } else if (request.action === "testNotification") {
+    testNotification();
+    sendResponse({ success: true });
+    return true;
+  } else if (request.action === "forceTestNotification") {
+    // Try the higher priority notification approach
+    forceTestNotification();
+    sendResponse({ success: true });
+    return true;
   } else if (request.action === "checkTimer") {
     const { tabId } = request;
     if (activeTimers[tabId]) {
@@ -331,10 +302,36 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   }
 });
 
-// Add alarm listener to close tabs when timers complete
+// Add alarm listener to handle warnings and closing tabs
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name.startsWith("closeTab_")) {
-    const tabId = parseInt(alarm.name.split("_")[1]);
+  const name = alarm.name;
+  if (name.startsWith('warnTab_')) {
+    const tabId = parseInt(name.split('_')[1]);
+    console.log(`Warning alarm triggered for tab ${tabId}`);
+
+    // Simple generic warning notification matching testNotification format
+    const secondsLeft = activeTimers[tabId]
+      ? Math.max(0, Math.ceil((activeTimers[tabId].endTime - Date.now()) / 1000))
+      : 0;
+    const warningOptions = {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/fade-that-monogram.png'),
+      title: 'Tab Closing Soon',
+      message: `Your tab will close in ${secondsLeft} seconds.`,
+      requireInteraction: false
+    };
+    const warningId = `warn-notification-${tabId}-${Date.now()}`;
+    chrome.notifications.create(warningId, warningOptions, (id) => {
+      if (chrome.runtime.lastError) {
+        console.error('Warning notification create error:', chrome.runtime.lastError);
+      } else {
+        console.log('Warning notification created:', id);
+      }
+    });
+
+    // No memory state required; one-off notification
+  } else if (name.startsWith('closeTab_')) {
+    const tabId = parseInt(name.split('_')[1]);
     console.log(`Alarm triggered for tab ${tabId}, attempting to close...`);
 
     // Remove from active timers
@@ -369,3 +366,5 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     });
   }
 });
+
+

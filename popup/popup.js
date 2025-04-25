@@ -14,6 +14,13 @@ function formatTime(seconds) {
   return [hours, minutes, secs].map((v) => (v < 10 ? '0' + v : v)).join(':');
 }
 
+// Format time as MM:SS for stopwatch display
+function formatStopwatchTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return [minutes, secs].map((v) => (v < 10 ? '0' + v : v)).join(':');
+}
+
 // Update the timer display
 function updateTimerDisplay() {
   if (timerPaused) {
@@ -31,29 +38,60 @@ function updateTimerDisplay() {
     return;
   }
 
+  // Update digital time display
   document.getElementById('timer-display').textContent = formatTime(timeLeft);
+  
+  // Update stopwatch display at top of clock
+  document.getElementById('stopwatch-display').textContent = formatStopwatchTime(timeLeft);
+  
+  // Update the clock hands to show real time
+  updateRealTimeClock();
+}
+
+// Initialize and update the clock hands for the real time clock
+function updateRealTimeClock() {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  
+  // Calculate rotation angles for hour, minute, and second hands
+  const hourDeg = (30 * (hours % 12) + minutes / 2);  // 30 degrees per hour + small shift for minutes
+  const minuteDeg = 6 * minutes;  // 6 degrees per minute
+  const secondDeg = 6 * seconds;  // 6 degrees per second
+  
+  // Apply rotations using translate and rotate transformations
+  const hourHand = document.getElementById('hour-hand');
+  const minuteHand = document.getElementById('minute-hand');
+  const secondHand = document.getElementById('second-hand');
+  
+  if (hourHand) hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+  if (minuteHand) minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+  if (secondHand) secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
 }
 
 // Show active timer UI
 function showActiveTimer(remainingTime) {
+  // Show timer elements
+  document.getElementById('timer-container').style.display = 'block';
+  document.getElementById('timer-controls').style.display = 'flex';
+  
+  // Hide input elements
   document.getElementById('startTimer').style.display = 'none';
   document.getElementById('duration-input').style.display = 'none';
   document.getElementById('tab-select-container').style.display = 'none';
-  document.getElementById('timer-controls').style.display = 'flex';
-  document.getElementById('timer-display').style.display = 'block';
+  
+  // Set pause button text
   document.getElementById('pauseTimer').textContent = 'Pause';
   document.getElementById('status').textContent = 'Timer active';
 
-  // Show back button if we're managing a timer for a tab other than the current one
-  if (targetTabId !== currentTabId) {
-    document.getElementById('backButton').style.display = 'block';
-  } else {
-    document.getElementById('backButton').style.display = 'none';
-  }
+  // Always show back button for all timers
+  document.getElementById('backButton').style.display = 'block';
 
   // Reset pause state
   timerPaused = false;
 
+  // Calculate end time and start updating the display
   endTime = new Date().getTime() + remainingTime * 1000;
   updateTimerDisplay();
   countdownInterval = setInterval(updateTimerDisplay, 1000);
@@ -62,31 +100,35 @@ function showActiveTimer(remainingTime) {
 // Show a paused timer UI
 function showPausedTimer(remainingTime) {
   clearInterval(countdownInterval);
+  
+  // Show timer elements
+  document.getElementById('timer-container').style.display = 'block';
+  document.getElementById('timer-controls').style.display = 'flex';
+  
+  // Hide input elements
   document.getElementById('startTimer').style.display = 'none';
   document.getElementById('duration-input').style.display = 'none';
   document.getElementById('tab-select-container').style.display = 'none';
-  document.getElementById('timer-controls').style.display = 'flex';
-  document.getElementById('timer-display').style.display = 'block';
+  
+  // Set UI for paused state
   document.getElementById('pauseTimer').textContent = 'Resume';
   document.getElementById('status').textContent = 'Timer paused';
 
-  // Show back button if we're managing a timer for a tab other than the current one
-  if (targetTabId !== currentTabId) {
-    document.getElementById('backButton').style.display = 'block';
-  } else {
-    document.getElementById('backButton').style.display = 'none';
-  }
+  // Always show back button for all timers
+  document.getElementById('backButton').style.display = 'block';
 
   timerPaused = true;
   pausedTimeRemaining = remainingTime;
-  document.getElementById('timer-display').textContent =
-    formatTime(remainingTime);
+  
+  // Update displays
+  document.getElementById('timer-display').textContent = formatTime(remainingTime);
+  updateClockHands(remainingTime);
 }
 
 // Hide active timer UI
 function hideTimerUI() {
   clearInterval(countdownInterval);
-  document.getElementById('timer-display').style.display = 'none';
+  document.getElementById('timer-container').style.display = 'none';
   document.getElementById('timer-controls').style.display = 'none';
   document.getElementById('extension-container').style.display = 'none';
   document.getElementById('fast-forward-container').style.display = 'none';
@@ -98,13 +140,21 @@ function hideTimerUI() {
 
 // Toggle timer pause state
 function togglePauseTimer() {
+  const pauseButton = document.getElementById('pauseTimer');
+  
   if (timerPaused) {
     // Resume timer
     timerPaused = false;
     endTime = new Date().getTime() + pausedTimeRemaining * 1000;
     updateTimerDisplay();
     countdownInterval = setInterval(updateTimerDisplay, 1000);
-    document.getElementById('pauseTimer').textContent = 'Pause';
+    
+    // Update button text and color
+    pauseButton.textContent = 'Pause';
+    pauseButton.className = ''; // Remove any resume-specific classes
+    pauseButton.style.borderColor = '#fbbc05';
+    pauseButton.style.color = '#fbbc05';
+    
     document.getElementById('status').textContent = 'Timer resumed';
 
     // Send message to background to update timer
@@ -119,7 +169,13 @@ function togglePauseTimer() {
     clearInterval(countdownInterval);
     const now = new Date().getTime();
     pausedTimeRemaining = Math.ceil((endTime - now) / 1000);
-    document.getElementById('pauseTimer').textContent = 'Resume';
+    
+    // Update button text and color
+    pauseButton.textContent = 'Resume';
+    pauseButton.className = 'resume-button';
+    pauseButton.style.borderColor = '#34a853'; // Green for resume
+    pauseButton.style.color = '#34a853';
+    
     document.getElementById('status').textContent = 'Timer paused';
 
     // Send message to background to pause timer
@@ -461,41 +517,229 @@ function toggleSettings() {
 // Check if the current tab has an active timer
 function checkCurrentTabTimer() {
   if (!currentTabId) return;
-
+  
   chrome.runtime.sendMessage(
-    { action: 'checkTimer', tabId: currentTabId },
+    { action: "checkTimer", tabId: currentTabId },
     function (response) {
       if (response && response.active) {
         // Current tab has an active timer
         const timer = response.timer;
         targetTabId = currentTabId;
-
+        
         if (timer.paused) {
           showPausedTimer(timer.remainingTime);
         } else {
           const remainingTime = Math.max(
             0,
-            Math.ceil((timer.endTime - Date.now()) / 1000),
+            Math.ceil((timer.endTime - Date.now()) / 1000)
           );
           showActiveTimer(remainingTime);
         }
-
-        document.getElementById('status').textContent =
-          'Timer active for current tab';
+        
+        document.getElementById("status").textContent = "Timer active for current tab";
       } else {
         // Current tab has no timer, show the timer creation UI
         hideTimerUI();
-        document.getElementById('startTimer').style.display = 'block';
-        document.getElementById('duration-input').style.display = 'flex';
-        document.getElementById('tab-select-container').style.display = 'flex';
-        document.getElementById('status').textContent =
-          'Set a timer for this tab';
       }
-
+      
+      // Always show timer creation controls even if there's an active timer
+      document.getElementById("startTimer").style.display = "block";
+      document.getElementById("duration-input").style.display = "flex";
+      document.getElementById("tab-select-container").style.display = "flex";
+      
       // Always update the list of all active timers
       updateActiveTimersList();
+    }
+  );
+}
+
+// Test notification function
+function testNotification() {
+  document.getElementById('status').textContent = 'Testing notifications...';
+  
+  chrome.runtime.sendMessage({ action: 'testNotification' }, function(response) {
+    if (response && response.success) {
+      document.getElementById('status').textContent = 'Test notification sent! Check your notifications.';
+      console.log('Test notification sent');
+    } else {
+      document.getElementById('status').textContent = 'Failed to send test notification';
+      console.error('Failed to send test notification:', 
+        response ? response.error : 'Unknown error');
+    }
+  });
+}
+
+// Test notification function with high priority - modified to remove high priority and in-app fallback
+function forceTestNotification() {
+  document.getElementById('status').textContent = 'Testing standard notification...';
+
+  // Try Chrome notification
+  chrome.runtime.sendMessage({ action: 'forceTestNotification' }, function(response) {
+    if (response && response.success) {
+      document.getElementById('status').textContent = 'Standard test notification sent! Check your notifications.';
+      console.log('Standard test notification sent to Chrome');
+    } else {
+      document.getElementById('status').textContent = 'Failed to send standard test notification';
+      console.error('Failed to send standard test notification:', 
+        response ? response.error : 'Unknown error');
+    }
+  });
+}
+
+// Start timer button click handler
+function startTimerHandler() {
+  let duration = parseInt(document.getElementById('duration').value, 10);
+  if (isNaN(duration) || duration <= 0) {
+    document.getElementById('status').textContent =
+      'Please enter a valid number of seconds.';
+    console.log('Invalid duration entered');
+    return;
+  }
+
+  // Get warning time from settings
+  chrome.storage.sync.get(
+    ['warningTime', 'enableNotifications'],
+    function (result) {
+      const warningTime = result.warningTime || 60;
+      const enableNotifications = result.enableNotifications !== false;
+
+      // Get selected tab option
+      const tabSelect = document.getElementById('tab-select');
+      const selectedValue = tabSelect.value;
+
+      if (selectedValue === 'current' || selectedValue == currentTabId) {
+        // Use current tab
+        chrome.tabs.get(currentTabId, function (tab) {
+          if (chrome.runtime.lastError) {
+            document.getElementById('status').textContent = 'Tab not found.';
+            console.log('Tab not found:', chrome.runtime.lastError);
+            return;
+          }
+
+          startTimerForTab(
+            currentTabId,
+            duration,
+            warningTime,
+            enableNotifications,
+            tab.title
+          );
+        });
+      } else {
+        // Use selected tab
+        const tabId = parseInt(selectedValue);
+        chrome.tabs.get(tabId, (tab) => {
+          if (chrome.runtime.lastError) {
+            document.getElementById('status').textContent = 'Tab not found.';
+            console.log('Tab not found:', chrome.runtime.lastError);
+            return;
+          }
+          startTimerForTab(
+            tabId,
+            duration,
+            warningTime,
+            enableNotifications,
+            tab.title
+          );
+        });
+      }
+    }
+  );
+}
+
+// Start timer for a specific tab
+function startTimerForTab(
+  tabId,
+  duration,
+  warningTime,
+  enableNotifications,
+  tabTitle,
+) {
+  targetTabId = tabId;
+
+  // Send message to background to start the timer for this tab
+  chrome.runtime.sendMessage(
+    {
+      action: 'startTimer',
+      tabId: tabId,
+      duration: duration,
+      warningTime: warningTime,
+      enableNotifications: enableNotifications,
+      tabTitle: tabTitle,
+    },
+    function (response) {
+      if (response && response.success) {
+        console.log(
+          `Timer started for tab ${tabId} with duration ${duration} seconds`,
+        );
+
+        // Setup visual countdown
+        clearInterval(countdownInterval);
+        showActiveTimer(duration);
+
+        // Store the tab ID of the timer for the popup
+        chrome.storage.local.set({ currentTimerTabId: tabId });
+
+        // Update active timers list
+        updateActiveTimersList();
+      } else {
+        document.getElementById('status').textContent = 'Error setting timer.';
+        console.error(
+          'Failed to start timer:',
+          response ? response.error : 'Unknown error',
+        );
+      }
     },
   );
+}
+
+// Stop timer handler
+function stopTimerHandler() {
+  if (targetTabId) {
+    chrome.runtime.sendMessage(
+      { action: 'stopTimer', tabId: targetTabId },
+      function (response) {
+        // Check if response exists first
+        if (chrome.runtime.lastError) {
+          console.error('Runtime error:', chrome.runtime.lastError);
+          document.getElementById('status').textContent =
+            'Error stopping timer: ' + chrome.runtime.lastError.message;
+          return;
+        }
+
+        if (response && response.success) {
+          console.log(`Timer stopped for tab ${targetTabId}`);
+
+          // If we stopped the timer for the current tab, show the timer creation UI
+          if (targetTabId === currentTabId) {
+            hideTimerUI();
+            document.getElementById('status').textContent = 'Timer stopped';
+          } else {
+            // If we stopped a timer for another tab, reset UI and check current tab timer
+            document.getElementById(
+              'status',
+            ).textContent = `Timer stopped for tab ${targetTabId}`;
+            checkCurrentTabTimer();
+          }
+
+          targetTabId = null;
+          timerPaused = false;
+
+          // Clear stored timer tab ID
+          chrome.storage.local.remove('currentTimerTabId');
+
+          // Update active timers list
+          updateActiveTimersList();
+        } else {
+          const errorMsg = response ? response.error : 'Unknown error';
+          document.getElementById('status').textContent =
+            'Error stopping timer: ' + errorMsg;
+          console.error('Failed to stop timer:', errorMsg);
+        }
+      },
+    );
+  } else {
+    document.getElementById('status').textContent = 'No active timer found.';
+  }
 }
 
 // Set up all event listeners
@@ -513,6 +757,11 @@ function setupEventListeners() {
   document
     .getElementById('enable-notifications')
     .addEventListener('change', saveSettings);
+    
+  // Add test notification button handler
+  document
+    .getElementById('test-notification-button')
+    .addEventListener('click', testNotification);
 
   // Timer control buttons
   document
@@ -572,116 +821,6 @@ function setupEventListeners() {
     .addEventListener('click', stopTimerHandler);
 }
 
-// Start timer button click handler
-function startTimerHandler() {
-  let duration = parseInt(document.getElementById('duration').value, 10);
-  if (isNaN(duration) || duration <= 0) {
-    document.getElementById('status').textContent =
-      'Please enter a valid number of seconds.';
-    console.log('Invalid duration entered');
-    return;
-  }
-
-  // Get warning time from settings
-  chrome.storage.sync.get(
-    ['warningTime', 'enableNotifications'],
-    function (result) {
-      const warningTime = result.warningTime || 60;
-      const enableNotifications = result.enableNotifications !== false;
-
-      // Get selected tab option (now always for the current tab)
-      const tabSelect = document.getElementById('tab-select');
-      const selectedValue = tabSelect.value;
-
-      if (selectedValue === 'current' || selectedValue == currentTabId) {
-        // Use current tab
-        chrome.tabs.get(currentTabId, function (tab) {
-          if (chrome.runtime.lastError) {
-            document.getElementById('status').textContent = 'Tab not found.';
-            console.log('Tab not found:', chrome.runtime.lastError);
-            return;
-          }
-
-          startTimerForTab(
-            currentTabId,
-            duration,
-            warningTime,
-            enableNotifications,
-            tab.title,
-          );
-        });
-      } else {
-        // Use selected tab
-        const tabId = parseInt(selectedValue);
-        chrome.tabs.get(tabId, (tab) => {
-          if (chrome.runtime.lastError) {
-            document.getElementById('status').textContent = 'Tab not found.';
-            console.log('Tab not found:', chrome.runtime.lastError);
-            return;
-          }
-          startTimerForTab(
-            tabId,
-            duration,
-            warningTime,
-            enableNotifications,
-            tab.title,
-          );
-        });
-      }
-    },
-  );
-}
-
-// Stop timer handler
-function stopTimerHandler() {
-  if (targetTabId) {
-    chrome.runtime.sendMessage(
-      { action: 'stopTimer', tabId: targetTabId },
-      function (response) {
-        // Check if response exists first
-        if (chrome.runtime.lastError) {
-          console.error('Runtime error:', chrome.runtime.lastError);
-          document.getElementById('status').textContent =
-            'Error stopping timer: ' + chrome.runtime.lastError.message;
-          return;
-        }
-
-        if (response && response.success) {
-          console.log(`Timer stopped for tab ${targetTabId}`);
-
-          // If we stopped the timer for the current tab, show the timer creation UI
-          if (targetTabId === currentTabId) {
-            hideTimerUI();
-            document.getElementById('status').textContent = 'Timer stopped';
-          } else {
-            // If we stopped a timer for another tab, reset UI and check current tab timer
-            document.getElementById(
-              'status',
-            ).textContent = `Timer stopped for tab ${targetTabId}`;
-            checkCurrentTabTimer();
-          }
-
-          targetTabId = null;
-          timerPaused = false;
-
-          // Clear stored timer tab ID
-          chrome.storage.local.remove('currentTimerTabId');
-
-          // Update active timers list
-          updateActiveTimersList();
-        } else {
-          const errorMsg = response ? response.error : 'Unknown error';
-          document.getElementById('status').textContent =
-            'Error stopping timer: ' + errorMsg;
-          console.error('Failed to stop timer:', errorMsg);
-        }
-      },
-    );
-  } else {
-    document.getElementById('status').textContent = 'No active timer found.';
-  }
-}
-
 // Check for active timer when popup opens
 document.addEventListener('DOMContentLoaded', () => {
   // Get the current tab first
@@ -703,52 +842,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-
-// Start timer for a specific tab
-function startTimerForTab(
-  tabId,
-  duration,
-  warningTime,
-  enableNotifications,
-  tabTitle,
-) {
-  targetTabId = tabId;
-
-  // Send message to background to start the timer for this tab
-  chrome.runtime.sendMessage(
-    {
-      action: 'startTimer',
-      tabId: tabId,
-      duration: duration,
-      warningTime: warningTime,
-      enableNotifications: enableNotifications,
-      tabTitle: tabTitle,
-    },
-    function (response) {
-      if (response && response.success) {
-        console.log(
-          `Timer started for tab ${tabId} with duration ${duration} seconds`,
-        );
-
-        // Setup visual countdown
-        clearInterval(countdownInterval);
-        showActiveTimer(duration);
-
-        // Store the tab ID of the timer for the popup
-        chrome.storage.local.set({ currentTimerTabId: tabId });
-
-        // Update active timers list
-        updateActiveTimersList();
-      } else {
-        document.getElementById('status').textContent = 'Error setting timer.';
-        console.error(
-          'Failed to start timer:',
-          response ? response.error : 'Unknown error',
-        );
-      }
-    },
-  );
-}
 
 // Update active timers list periodically
 setInterval(updateActiveTimersList, 5000);

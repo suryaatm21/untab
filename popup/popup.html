@@ -7,8 +7,27 @@
   <body>
     <div class="container">
       <h2>Fade That</h2>
-
-      <div id="timer-display">00:00:00</div>
+      
+      <!-- Timer display with realistic clock -->
+      <div id="timer-container" class="timer-container" style="display: none;">
+        <div class="realistic-clock">
+          <div class="clock-face">
+            <div class="stopwatch-display" id="stopwatch-display">00:00</div>
+            <div class="glass-cover"></div>
+            <div id="hour-hand" class="hour hand"></div>
+            <div id="minute-hand" class="minute hand"></div>
+            <div id="second-hand" class="second hand"></div>
+            <div class="center-circle"></div>
+            <div class="clock-numbers">
+              <p style="top: 0.5px; left: 135px;" class="number">12</p>
+              <p style="top: 100px; right: 10px;" class="number">3</p>
+              <p style="bottom: 0.5px; left: 135px;" class="number">6</p>
+              <p style="top: 100px; left: 10px;" class="number">9</p>
+            </div>
+          </div>
+        </div>
+        <div id="timer-display">00:00:00</div>
+      </div>
 
       <div class="input-group" id="duration-input">
         <label for="duration">Time in seconds:</label>
@@ -29,7 +48,10 @@
         <button id="pauseTimer">Pause</button>
         <button id="extendTimer">Extend</button>
         <button id="fastForwardTimer">Fast Forward</button>
-        <button id="stopTimer">Stop Timer</button>
+        <button id="stopTimer" class="stop-btn">
+          <div class="back"></div>
+          <div class="front">STOP</div>
+        </button>
       </div>
       
       <button id="backButton" class="back-button">← Back to All Timers</button>
@@ -58,13 +80,14 @@
 
       <p id="status"></p>
 
-      <div class="settings-toggle" id="toggle-settings">⚙️ Settings</div>
+      <div class="settings-toggle" id="toggle-settings">Settings</div>
       <div class="settings-container" id="settings-container">
         <div class="checkbox-group">
-          <input type="checkbox" id="default-current-tab" />
-          <label for="default-current-tab"
-            >Always use current tab as default</label
-          >
+          <div class="cntr">
+            <input type="checkbox" id="default-current-tab" class="hidden-xs-up" />
+            <label for="default-current-tab" class="cbx"></label>
+            <label for="default-current-tab" class="lbl">Always use current tab as default</label>
+          </div>
         </div>
 
         <div class="input-group">
@@ -79,8 +102,16 @@
         </div>
 
         <div class="checkbox-group">
-          <input type="checkbox" id="enable-notifications" checked />
-          <label for="enable-notifications">Enable notifications</label>
+          <div class="cntr">
+            <input type="checkbox" id="enable-notifications" class="hidden-xs-up" checked />
+            <label for="enable-notifications" class="cbx"></label>
+            <label for="enable-notifications" class="lbl">Enable notifications</label>
+          </div>
+        </div>
+        
+        <div class="test-notification-container">
+          <button id="test-notification-button">Test Notifications</button>
+          <!-- Force notification button removed -->
         </div>
       </div>
 

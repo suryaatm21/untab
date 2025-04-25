@@ -8,6 +8,15 @@ class NotificationManager {
    */
   constructor() {
     this.setupNotificationListeners();
+    console.log("NotificationManager initialized");
+  }
+
+  /**
+   * Debug logging helper
+   * @param {string} message - Message to log
+   */
+  debug(message) {
+    console.log(`[NotificationManager] ${message}`);
   }
 
   /**
@@ -16,73 +25,41 @@ class NotificationManager {
    * @param {string} title - Title of the notification
    * @param {string} message - Content message of the notification
    * @param {Array} buttons - Array of button objects for the notification
+   * @param {string} [customNotificationId] - Optional custom notification ID
    * @returns {Promise} - Promise that resolves with the notification ID
    */
-  createNotification(tabId, title, message, buttons = []) {
+  createNotification(tabId, title, message, buttons = [], customNotificationId = null) {
+    this.debug(`Creating notification for tab ${tabId}: "${title}"`);
+
     return new Promise((resolve, reject) => {
       try {
-        chrome.tabs.get(tabId, (tab) => {
+        // Directly build and show the notification without checking tab existence
+        const iconUrl = chrome.runtime.getURL("icons/fade-that-monogram.png");
+        this.debug(`Using icon: ${iconUrl}`);
+
+        let notificationOptions = {
+          type: "basic",
+          iconUrl: iconUrl,
+          title: title || "Fade That",
+          message: message || "",
+          requireInteraction: false,
+        };
+        if (buttons && buttons.length > 0) {
+          notificationOptions.buttons = buttons;
+          this.debug(`Added ${buttons.length} buttons to notification`);
+        }
+
+        const notificationId = customNotificationId || `fade-that-notification-${tabId}-${Date.now()}`;
+        this.debug(`Attempting to create notification with ID: ${notificationId}`);
+        // Create notification using unique ID
+        chrome.notifications.create(notificationId, notificationOptions, (createdId) => {
           if (chrome.runtime.lastError) {
-            console.error("Tab error:", chrome.runtime.lastError);
+            console.error("Notification creation error:", chrome.runtime.lastError);
             reject(chrome.runtime.lastError);
-            return;
+          } else {
+            this.debug(`Successfully created notification ${createdId}`);
+            resolve(createdId);
           }
-
-          // The error occurs because iconUrl is required but was commented out
-          // Let's create a default icon URL using the extension ID
-          const iconUrl = chrome.runtime.getURL("icons/Icon 3.png");
-
-          let notificationOptions = {
-            type: "basic",
-            iconUrl: iconUrl, // This is required
-            title: title || "Fade That", // Provide default title if missing
-            message: message || "Timer notification", // Provide default message if missing
-            requireInteraction: true,
-          };
-
-          if (buttons && buttons.length > 0) {
-            notificationOptions.buttons = buttons;
-          }
-
-          // Create a unique notification ID for this tab
-          const notificationId = "fade-that-notification-" + tabId;
-
-          chrome.notifications.create(
-            notificationId,
-            notificationOptions,
-            (createdId) => {
-              if (chrome.runtime.lastError) {
-                console.error("Notification creation error:", chrome.runtime.lastError);
-                
-                // Fallback without buttons if there was an error
-                // Some Chrome versions/platforms don't support notification buttons
-                const fallbackOptions = {
-                  type: "basic",
-                  iconUrl: iconUrl,
-                  title: title || "Fade That",
-                  message: message + " (Use extension popup for timer control)",
-                  requireInteraction: true
-                };
-                
-                chrome.notifications.create(
-                  notificationId + "-fallback",
-                  fallbackOptions,
-                  (createdId) => {
-                    if (chrome.runtime.lastError) {
-                      console.error("Fallback notification error:", chrome.runtime.lastError);
-                      reject(chrome.runtime.lastError);
-                    } else {
-                      console.log(`Created fallback notification ${createdId} for tab ${tabId}`);
-                      resolve(createdId);
-                    }
-                  }
-                );
-              } else {
-                console.log(`Created notification ${createdId} for tab ${tabId}`);
-                resolve(createdId);
-              }
-            }
-          );
         });
       } catch (error) {
         console.error("Notification creation error:", error);
@@ -98,6 +75,8 @@ class NotificationManager {
    * @returns {Promise} - Promise that resolves when notification is created
    */
   createTimerWarningNotification(tabId, secondsLeft) {
+    this.debug(`Creating warning notification for tab ${tabId} with ${secondsLeft}s remaining`);
+    
     // Format the time text
     let timeText = "";
     if (secondsLeft > 60) {
@@ -108,11 +87,16 @@ class NotificationManager {
       timeText = `${secondsLeft} seconds`;
     }
 
+    // Temporarily remove buttons to test if they are causing issues on macOS
+    const buttons = []; 
+    // const buttons = [{ title: "Extend by 5 minutes" }, { title: "Cancel Timer" }];
+    
+    // Call createNotification without a custom ID to allow unique IDs for each warning
     return this.createNotification(
       tabId,
       "Tab Closing Soon",
       `The tab will close in ${timeText}.`,
-      [{ title: "Extend by 5 minutes" }, { title: "Cancel Timer" }]
+      []
     );
   }
 

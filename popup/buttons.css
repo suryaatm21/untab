@@ -1,0 +1,117 @@
+/* Standard button styles */
+button {
+  font-size: 18px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: inline-block;
+  text-align: center;
+  font-weight: bold;
+  padding: 0.7em 2em;
+  border: 3px solid #FF0072;
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.1);
+  color: #FF0072;
+  text-decoration: none;
+  transition: 0.3s ease all;
+  z-index: 1;
+  cursor: pointer;
+  margin: 10px 0;
+}
+
+button:before {
+  transition: 0.5s all ease;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  right: 50%;
+  bottom: 0;
+  opacity: 0;
+  content: '';
+  background-color: #FF0072;
+  z-index: -1;
+}
+
+button:hover, button:focus {
+  color: white;
+}
+
+button:hover:before, button:focus:before {
+  transition: 0.5s all ease;
+  left: 0;
+  right: 0;
+  opacity: 1;
+}
+
+button:active {
+  transform: scale(0.9);
+}
+
+/* Special button variations */
+#pauseTimer {
+  border-color: #fbbc05;
+  color: #fbbc05;
+}
+
+#pauseTimer:before {
+  background-color: #fbbc05;
+}
+
+#extendTimer {
+  border-color: #34a853;
+  color: #34a853;
+}
+
+#extendTimer:before {
+  background-color: #34a853;
+}
+
+#fastForwardTimer {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+#fastForwardTimer:before {
+  background-color: #4285f4;
+}
+
+/* Back button styling */
+.back-button {
+  font-size: 14px;
+  padding: 0.5em 1em;
+  border-color: #9aa0a6;
+  color: #9aa0a6;
+}
+
+.back-button:before {
+  background-color: #9aa0a6;
+}
+
+/* Test notification button */
+#test-notification-button {
+  font-size: 14px;
+  padding: 0.5em 1em;
+  border-color: #5f6368;
+  color: #5f6368;
+}
+
+#test-notification-button:before {
+  background-color: #5f6368;
+}
+
+/* Timer controls container */
+.timer-controls {
+  display: none;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.timer-controls button {
+  flex: 1;
+  min-width: 32%;
+  margin: 5px;
+  padding: 8px 4px;
+  font-size: 13px;
+}
