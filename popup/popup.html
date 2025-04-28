@@ -7,9 +7,9 @@
   <body>
     <div class="container">
       <h2>Fade That</h2>
-      
+
       <!-- Timer display with realistic clock -->
-      <div id="timer-container" class="timer-container" style="display: none;">
+      <div id="timer-container" class="timer-container" style="display: none">
         <div class="realistic-clock">
           <div class="clock-face">
             <div class="stopwatch-display" id="stopwatch-display">00:00</div>
@@ -19,10 +19,10 @@
             <div id="second-hand" class="second hand"></div>
             <div class="center-circle"></div>
             <div class="clock-numbers">
-              <p style="top: 0.5px; left: 135px;" class="number">12</p>
-              <p style="top: 100px; right: 10px;" class="number">3</p>
-              <p style="bottom: 0.5px; left: 135px;" class="number">6</p>
-              <p style="top: 100px; left: 10px;" class="number">9</p>
+              <p style="top: 0.5px; left: 135px" class="number">12</p>
+              <p style="top: 100px; right: 10px" class="number">3</p>
+              <p style="bottom: 0.5px; left: 135px" class="number">6</p>
+              <p style="top: 100px; left: 10px" class="number">9</p>
             </div>
           </div>
         </div>
@@ -45,16 +45,17 @@
       <button id="startTimer">Start Timer</button>
 
       <div class="timer-controls" id="timer-controls">
-        <button id="pauseTimer">Pause</button>
-        <button id="extendTimer">Extend</button>
-        <button id="fastForwardTimer">Fast Forward</button>
-        <button id="stopTimer" class="stop-btn">
-          <div class="back"></div>
-          <div class="front">STOP</div>
-        </button>
+        <!-- Row for extend and fast forward buttons -->
+        <div class="ef-buttons-row">
+          <button id="extendTimer">Extend</button>
+          <button id="fastForwardTimer">Fast Forward</button>
+        </div>
+        <!-- Row for pause and stop buttons -->
+        <div class="ps-buttons-row">
+          <button id="pauseTimer">Pause</button>
+          <button id="stopTimer">Stop</button>
+        </div>
       </div>
-      
-      <button id="backButton" class="back-button">← Back to All Timers</button>
 
       <div class="extension-container" id="extension-container">
         <div class="input-group">
@@ -78,15 +79,22 @@
         </div>
       </div>
 
+      <button id="backButton" class="back-button">← Back to All Timers</button>
+
       <p id="status"></p>
 
       <div class="settings-toggle" id="toggle-settings">Settings</div>
       <div class="settings-container" id="settings-container">
         <div class="checkbox-group">
           <div class="cntr">
-            <input type="checkbox" id="default-current-tab" class="hidden-xs-up" />
+            <input
+              type="checkbox"
+              id="default-current-tab"
+              class="hidden-xs-up" />
             <label for="default-current-tab" class="cbx"></label>
-            <label for="default-current-tab" class="lbl">Always use current tab as default</label>
+            <label for="default-current-tab" class="lbl"
+              >Always use current tab as default</label
+            >
           </div>
         </div>
 
@@ -97,18 +105,23 @@
             id="warning-time"
             value="60"
             min="10"
-            max="300"
-          />
+            max="300" />
         </div>
 
         <div class="checkbox-group">
           <div class="cntr">
-            <input type="checkbox" id="enable-notifications" class="hidden-xs-up" checked />
+            <input
+              type="checkbox"
+              id="enable-notifications"
+              class="hidden-xs-up"
+              checked />
             <label for="enable-notifications" class="cbx"></label>
-            <label for="enable-notifications" class="lbl">Enable notifications</label>
+            <label for="enable-notifications" class="lbl"
+              >Enable notifications</label
+            >
           </div>
         </div>
-        
+
         <div class="test-notification-container">
           <button id="test-notification-button">Test Notifications</button>
           <!-- Force notification button removed -->

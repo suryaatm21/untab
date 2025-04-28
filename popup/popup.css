@@ -1,3 +1,6 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
 /* Import component stylesheets */
 @import url('checkbox.css');
 @import url('buttons.css');
@@ -6,61 +9,86 @@
 
 /* Core layout styles */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  padding: 20px;
-  width: 320px;
+  font-family: 'Inter', sans-serif;
+  padding: 15px;
+  width: 360px;
+  height: 580px; /* Set fixed height to ensure buttons fit without scrolling */
   margin: 0;
-  background-color: #fafafa;
+  background-color: #f9f9f9;
   color: #333;
+  overflow-y: auto; /* Add scrolling for overflow content but aim to fit key elements */
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 100%;
 }
 
 h2 {
-  color: #FF0072;
-  margin-bottom: 20px;
+  font-family: 'Poppins', sans-serif;
+  color: #ef5b5b;
+  margin-bottom: 15px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  font-size: 24px;
+  text-align: center;
+  font-weight: 700;
+  width: 100%;
 }
 
 /* Form elements */
 input,
 select {
-  margin: 10px 0;
-  padding: 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.3s;
+  margin: 8px 0;
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s;
+  flex-grow: 1;
+  min-width: 0; /* Allows the input to shrink below its default size */
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 input:focus,
 select:focus {
-  border-color: #FF0072;
+  border-color: #ef5b5b;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 0, 114, 0.1);
+  box-shadow: 0 0 0 3px rgba(239, 91, 91, 0.1);
 }
 
 /* Timer display */
 #timer-display {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: bold;
-  margin: 20px 0;
-  color: #FF0072;
+  margin: 15px 0;
+  color: #fc0303; /* Updated to specified saturated red */
   display: none;
-  font-family: 'Courier New', monospace;
+  font-family: 'Inter', monospace;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Center the stopwatch display */
+#stopwatch-display {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fc0303; /* Updated to specified saturated red */
+  z-index: 10;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Status message */
 #status {
   color: #5f6368;
   text-align: center;
-  margin: 10px 0;
+  margin: 8px 0;
   font-size: 14px;
   min-height: 20px;
 }
@@ -72,13 +100,55 @@ select:focus {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  gap: 10px;
+}
+
+.input-group label {
+  min-width: 40%;
+  font-weight: 500;
+  font-size: 15px;
+  color: #555;
+  text-align: right;
+  padding-right: 5px;
 }
 
 .checkbox-group {
   width: 100%;
-  margin: 15px 0;
+  margin: 12px 0;
   display: flex;
   align-items: center;
+}
+
+/* Adjust the clock container */
+.timer-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.realistic-clock {
+  margin: 20px auto 10px auto;
+  transform: scale(0.9); /* Make the clock slightly smaller to fit better */
+  display: flex;
+  justify-content: center;
+}
+
+/* Start Timer button */
+#startTimer {
+  width: 100%;
+  margin: 15px 0;
+}
+
+/* Timer controls container - organize buttons in rows */
+.timer-controls {
+  display: none;
+  width: 100%;
+  flex-direction: column;
+  justify-content: center;
+  margin: 10px 0;
 }
 
 /* Stop button custom styling (overriding the stop-button.css) */
@@ -94,7 +164,7 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px 0;
+  margin: 15px 0;
 }
 
 /* Settings panel */
@@ -102,13 +172,14 @@ select:focus {
   color: #5f6368;
   text-align: center;
   cursor: pointer;
-  margin-top: 20px;
+  margin-top: 5px;
   font-size: 15px;
   transition: color 0.3s;
+  padding: 5px;
 }
 
 .settings-toggle:hover {
-  color: #FF0072;
+  color: #ef5b5b;
 }
 
 .settings-container {
@@ -116,9 +187,62 @@ select:focus {
   margin-top: 10px;
   padding: 15px;
   background-color: #f2f2f2;
-  border-radius: 8px;
+  border-radius: 10px;
   display: none;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Settings toggle */
+#settings-footer {
+  text-align: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Settings toggle button */
+#toggle-settings {
+  background: none;
+  border: none;
+  color: #5f6368;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px;
+  margin: 0;
+}
+
+#toggle-settings:hover {
+  text-decoration: underline;
+}
+
+/* Settings container */
+#settings-container {
+  display: none;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.settings-group {
+  margin-bottom: 10px;
+}
+
+.settings-group:last-child {
+  margin-bottom: 0;
+}
+
+.settings-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 /* Extensions UI */
@@ -129,7 +253,7 @@ select:focus {
   margin-top: 15px;
   padding: 15px;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -137,11 +261,13 @@ select:focus {
   display: flex;
   justify-content: space-between;
   width: 100%;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .extension-options button {
   flex: 1;
-  margin: 0 5px;
+  margin: 0;
   font-size: 14px;
   padding: 8px 0;
 }
@@ -161,7 +287,7 @@ select:focus {
   padding: 0;
   margin: 0;
   list-style-type: none;
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
@@ -174,8 +300,17 @@ select:focus {
   background-color: white;
 }
 
+.timer-item:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
 .timer-item:last-child {
   border-bottom: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.timer-item:only-child {
+  border-radius: 10px;
 }
 
 .timer-info {
@@ -199,11 +334,11 @@ select:focus {
 
 .timer-active {
   background-color: #fff3f3;
-  border-left: 3px solid #FF0072;
+  border-left: 3px solid #ef5b5b;
 }
 
 .timer-current-tab .timer-title {
-  color: #FF0072;
+  color: #ef5b5b;
 }
 
 .timer-current-tab.timer-active {
@@ -236,6 +371,13 @@ select:focus {
   margin-top: 15px;
   display: flex;
   justify-content: center;
+}
+
+/* Back button positioning */
+#backButton {
+  margin: 15px auto 10px auto;
+  width: 80%;
+  display: none; /* Hide by default, will be shown when needed */
 }
 
 /* Hide elements with this class */

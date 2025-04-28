@@ -40,10 +40,11 @@ function updateTimerDisplay() {
 
   // Update digital time display
   document.getElementById('timer-display').textContent = formatTime(timeLeft);
-  
+
   // Update stopwatch display at top of clock
-  document.getElementById('stopwatch-display').textContent = formatStopwatchTime(timeLeft);
-  
+  document.getElementById('stopwatch-display').textContent =
+    formatStopwatchTime(timeLeft);
+
   // Update the clock hands to show real time
   updateRealTimeClock();
 }
@@ -54,20 +55,23 @@ function updateRealTimeClock() {
   const hours = now.getHours();
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
-  
+
   // Calculate rotation angles for hour, minute, and second hands
-  const hourDeg = (30 * (hours % 12) + minutes / 2);  // 30 degrees per hour + small shift for minutes
-  const minuteDeg = 6 * minutes;  // 6 degrees per minute
-  const secondDeg = 6 * seconds;  // 6 degrees per second
-  
+  const hourDeg = 30 * (hours % 12) + minutes / 2; // 30 degrees per hour + small shift for minutes
+  const minuteDeg = 6 * minutes; // 6 degrees per minute
+  const secondDeg = 6 * seconds; // 6 degrees per second
+
   // Apply rotations using translate and rotate transformations
   const hourHand = document.getElementById('hour-hand');
   const minuteHand = document.getElementById('minute-hand');
   const secondHand = document.getElementById('second-hand');
-  
-  if (hourHand) hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
-  if (minuteHand) minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
-  if (secondHand) secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+
+  if (hourHand)
+    hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+  if (minuteHand)
+    minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+  if (secondHand)
+    secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
 }
 
 // Show active timer UI
@@ -75,12 +79,12 @@ function showActiveTimer(remainingTime) {
   // Show timer elements
   document.getElementById('timer-container').style.display = 'block';
   document.getElementById('timer-controls').style.display = 'flex';
-  
+
   // Hide input elements
   document.getElementById('startTimer').style.display = 'none';
   document.getElementById('duration-input').style.display = 'none';
   document.getElementById('tab-select-container').style.display = 'none';
-  
+
   // Set pause button text
   document.getElementById('pauseTimer').textContent = 'Pause';
   document.getElementById('status').textContent = 'Timer active';
@@ -100,16 +104,16 @@ function showActiveTimer(remainingTime) {
 // Show a paused timer UI
 function showPausedTimer(remainingTime) {
   clearInterval(countdownInterval);
-  
+
   // Show timer elements
   document.getElementById('timer-container').style.display = 'block';
   document.getElementById('timer-controls').style.display = 'flex';
-  
+
   // Hide input elements
   document.getElementById('startTimer').style.display = 'none';
   document.getElementById('duration-input').style.display = 'none';
   document.getElementById('tab-select-container').style.display = 'none';
-  
+
   // Set UI for paused state
   document.getElementById('pauseTimer').textContent = 'Resume';
   document.getElementById('status').textContent = 'Timer paused';
@@ -119,9 +123,10 @@ function showPausedTimer(remainingTime) {
 
   timerPaused = true;
   pausedTimeRemaining = remainingTime;
-  
+
   // Update displays
-  document.getElementById('timer-display').textContent = formatTime(remainingTime);
+  document.getElementById('timer-display').textContent =
+    formatTime(remainingTime);
   updateClockHands(remainingTime);
 }
 
@@ -141,20 +146,18 @@ function hideTimerUI() {
 // Toggle timer pause state
 function togglePauseTimer() {
   const pauseButton = document.getElementById('pauseTimer');
-  
+
   if (timerPaused) {
     // Resume timer
     timerPaused = false;
     endTime = new Date().getTime() + pausedTimeRemaining * 1000;
     updateTimerDisplay();
     countdownInterval = setInterval(updateTimerDisplay, 1000);
-    
-    // Update button text and color
+
+    // Update button text and styling - return to original pause styling
     pauseButton.textContent = 'Pause';
-    pauseButton.className = ''; // Remove any resume-specific classes
-    pauseButton.style.borderColor = '#fbbc05';
-    pauseButton.style.color = '#fbbc05';
-    
+    pauseButton.classList.remove('resume-button'); // Remove resume class
+
     document.getElementById('status').textContent = 'Timer resumed';
 
     // Send message to background to update timer
@@ -169,13 +172,11 @@ function togglePauseTimer() {
     clearInterval(countdownInterval);
     const now = new Date().getTime();
     pausedTimeRemaining = Math.ceil((endTime - now) / 1000);
-    
-    // Update button text and color
+
+    // Update button text and styling
     pauseButton.textContent = 'Resume';
-    pauseButton.className = 'resume-button';
-    pauseButton.style.borderColor = '#34a853'; // Green for resume
-    pauseButton.style.color = '#34a853';
-    
+    pauseButton.classList.add('resume-button'); // Add resume class
+
     document.getElementById('status').textContent = 'Timer paused';
 
     // Send message to background to pause timer
@@ -517,73 +518,92 @@ function toggleSettings() {
 // Check if the current tab has an active timer
 function checkCurrentTabTimer() {
   if (!currentTabId) return;
-  
+
   chrome.runtime.sendMessage(
-    { action: "checkTimer", tabId: currentTabId },
+    { action: 'checkTimer', tabId: currentTabId },
     function (response) {
       if (response && response.active) {
         // Current tab has an active timer
         const timer = response.timer;
         targetTabId = currentTabId;
-        
+
         if (timer.paused) {
           showPausedTimer(timer.remainingTime);
         } else {
           const remainingTime = Math.max(
             0,
-            Math.ceil((timer.endTime - Date.now()) / 1000)
+            Math.ceil((timer.endTime - Date.now()) / 1000),
           );
           showActiveTimer(remainingTime);
         }
-        
-        document.getElementById("status").textContent = "Timer active for current tab";
+
+        document.getElementById('status').textContent =
+          'Timer active for current tab';
+        document.getElementById('backButton').style.display = 'block';
       } else {
         // Current tab has no timer, show the timer creation UI
         hideTimerUI();
+        // Hide back button when no timer is active
+        document.getElementById('backButton').style.display = 'none';
       }
-      
+
       // Always show timer creation controls even if there's an active timer
-      document.getElementById("startTimer").style.display = "block";
-      document.getElementById("duration-input").style.display = "flex";
-      document.getElementById("tab-select-container").style.display = "flex";
-      
+      document.getElementById('startTimer').style.display = 'block';
+      document.getElementById('duration-input').style.display = 'flex';
+      document.getElementById('tab-select-container').style.display = 'flex';
+
       // Always update the list of all active timers
       updateActiveTimersList();
-    }
+    },
   );
 }
 
 // Test notification function
 function testNotification() {
   document.getElementById('status').textContent = 'Testing notifications...';
-  
-  chrome.runtime.sendMessage({ action: 'testNotification' }, function(response) {
-    if (response && response.success) {
-      document.getElementById('status').textContent = 'Test notification sent! Check your notifications.';
-      console.log('Test notification sent');
-    } else {
-      document.getElementById('status').textContent = 'Failed to send test notification';
-      console.error('Failed to send test notification:', 
-        response ? response.error : 'Unknown error');
-    }
-  });
+
+  chrome.runtime.sendMessage(
+    { action: 'testNotification' },
+    function (response) {
+      if (response && response.success) {
+        document.getElementById('status').textContent =
+          'Test notification sent! Check your notifications.';
+        console.log('Test notification sent');
+      } else {
+        document.getElementById('status').textContent =
+          'Failed to send test notification';
+        console.error(
+          'Failed to send test notification:',
+          response ? response.error : 'Unknown error',
+        );
+      }
+    },
+  );
 }
 
 // Test notification function with high priority - modified to remove high priority and in-app fallback
 function forceTestNotification() {
-  document.getElementById('status').textContent = 'Testing standard notification...';
+  document.getElementById('status').textContent =
+    'Testing standard notification...';
 
   // Try Chrome notification
-  chrome.runtime.sendMessage({ action: 'forceTestNotification' }, function(response) {
-    if (response && response.success) {
-      document.getElementById('status').textContent = 'Standard test notification sent! Check your notifications.';
-      console.log('Standard test notification sent to Chrome');
-    } else {
-      document.getElementById('status').textContent = 'Failed to send standard test notification';
-      console.error('Failed to send standard test notification:', 
-        response ? response.error : 'Unknown error');
-    }
-  });
+  chrome.runtime.sendMessage(
+    { action: 'forceTestNotification' },
+    function (response) {
+      if (response && response.success) {
+        document.getElementById('status').textContent =
+          'Standard test notification sent! Check your notifications.';
+        console.log('Standard test notification sent to Chrome');
+      } else {
+        document.getElementById('status').textContent =
+          'Failed to send standard test notification';
+        console.error(
+          'Failed to send standard test notification:',
+          response ? response.error : 'Unknown error',
+        );
+      }
+    },
+  );
 }
 
 // Start timer button click handler
@@ -621,7 +641,7 @@ function startTimerHandler() {
             duration,
             warningTime,
             enableNotifications,
-            tab.title
+            tab.title,
           );
         });
       } else {
@@ -638,11 +658,11 @@ function startTimerHandler() {
             duration,
             warningTime,
             enableNotifications,
-            tab.title
+            tab.title,
           );
         });
       }
-    }
+    },
   );
 }
 
@@ -757,7 +777,7 @@ function setupEventListeners() {
   document
     .getElementById('enable-notifications')
     .addEventListener('change', saveSettings);
-    
+
   // Add test notification button handler
   document
     .getElementById('test-notification-button')

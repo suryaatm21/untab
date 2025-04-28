@@ -8,7 +8,7 @@ class NotificationManager {
    */
   constructor() {
     this.setupNotificationListeners();
-    console.log("NotificationManager initialized");
+    console.log('NotificationManager initialized');
   }
 
   /**
@@ -28,20 +28,26 @@ class NotificationManager {
    * @param {string} [customNotificationId] - Optional custom notification ID
    * @returns {Promise} - Promise that resolves with the notification ID
    */
-  createNotification(tabId, title, message, buttons = [], customNotificationId = null) {
+  createNotification(
+    tabId,
+    title,
+    message,
+    buttons = [],
+    customNotificationId = null,
+  ) {
     this.debug(`Creating notification for tab ${tabId}: "${title}"`);
 
     return new Promise((resolve, reject) => {
       try {
         // Directly build and show the notification without checking tab existence
-        const iconUrl = chrome.runtime.getURL("icons/fade-that-monogram.png");
+        const iconUrl = chrome.runtime.getURL('icons/fade-that-monogram.png');
         this.debug(`Using icon: ${iconUrl}`);
 
         let notificationOptions = {
-          type: "basic",
+          type: 'basic',
           iconUrl: iconUrl,
-          title: title || "Fade That",
-          message: message || "",
+          title: title || 'Fade That',
+          message: message || '',
           requireInteraction: false,
         };
         if (buttons && buttons.length > 0) {
@@ -49,20 +55,31 @@ class NotificationManager {
           this.debug(`Added ${buttons.length} buttons to notification`);
         }
 
-        const notificationId = customNotificationId || `fade-that-notification-${tabId}-${Date.now()}`;
-        this.debug(`Attempting to create notification with ID: ${notificationId}`);
+        const notificationId =
+          customNotificationId ||
+          `fade-that-notification-${tabId}-${Date.now()}`;
+        this.debug(
+          `Attempting to create notification with ID: ${notificationId}`,
+        );
         // Create notification using unique ID
-        chrome.notifications.create(notificationId, notificationOptions, (createdId) => {
-          if (chrome.runtime.lastError) {
-            console.error("Notification creation error:", chrome.runtime.lastError);
-            reject(chrome.runtime.lastError);
-          } else {
-            this.debug(`Successfully created notification ${createdId}`);
-            resolve(createdId);
-          }
-        });
+        chrome.notifications.create(
+          notificationId,
+          notificationOptions,
+          (createdId) => {
+            if (chrome.runtime.lastError) {
+              console.error(
+                'Notification creation error:',
+                chrome.runtime.lastError,
+              );
+              reject(chrome.runtime.lastError);
+            } else {
+              this.debug(`Successfully created notification ${createdId}`);
+              resolve(createdId);
+            }
+          },
+        );
       } catch (error) {
-        console.error("Notification creation error:", error);
+        console.error('Notification creation error:', error);
         reject(error);
       }
     });
@@ -75,10 +92,12 @@ class NotificationManager {
    * @returns {Promise} - Promise that resolves when notification is created
    */
   createTimerWarningNotification(tabId, secondsLeft) {
-    this.debug(`Creating warning notification for tab ${tabId} with ${secondsLeft}s remaining`);
-    
+    this.debug(
+      `Creating warning notification for tab ${tabId} with ${secondsLeft}s remaining`,
+    );
+
     // Format the time text
-    let timeText = "";
+    let timeText = '';
     if (secondsLeft > 60) {
       timeText = `${Math.floor(secondsLeft / 60)} minutes and ${
         secondsLeft % 60
@@ -88,15 +107,15 @@ class NotificationManager {
     }
 
     // Temporarily remove buttons to test if they are causing issues on macOS
-    const buttons = []; 
+    const buttons = [];
     // const buttons = [{ title: "Extend by 5 minutes" }, { title: "Cancel Timer" }];
-    
+
     // Call createNotification without a custom ID to allow unique IDs for each warning
     return this.createNotification(
       tabId,
-      "Tab Closing Soon",
+      'Tab Closing Soon',
       `The tab will close in ${timeText}.`,
-      []
+      [],
     );
   }
 
@@ -107,7 +126,7 @@ class NotificationManager {
    * @returns {Promise} - Promise that resolves when notification is created
    */
   notifyTimerCreated(tabId, duration) {
-    let timeText = "";
+    let timeText = '';
     if (duration > 60) {
       timeText = `${Math.floor(duration / 60)} minutes and ${
         duration % 60
@@ -118,9 +137,9 @@ class NotificationManager {
 
     return this.createNotification(
       tabId,
-      "Timer Started",
+      'Timer Started',
       `Tab will close in ${timeText}.`,
-      [{ title: "Ok" }]
+      [{ title: 'Ok' }],
     );
   }
 
@@ -131,13 +150,13 @@ class NotificationManager {
     chrome.notifications.onButtonClicked.addListener(
       (notificationId, buttonIndex) => {
         // Extract the tabId from the notification ID
-        if (notificationId.startsWith("fade-that-notification-")) {
-          const tabId = parseInt(notificationId.split("-").pop());
+        if (notificationId.startsWith('fade-that-notification-')) {
+          const tabId = parseInt(notificationId.split('-').pop());
 
           // Dispatch to appropriate handlers
           if (buttonIndex === 0) {
             // First button (Extend / Ok)
-            if (notificationId.includes("warning")) {
+            if (notificationId.includes('warning')) {
               // Only extend if it's a warning notification
               this.handleExtendTimerFromNotification(tabId);
             }
@@ -149,14 +168,14 @@ class NotificationManager {
           // Clear the notification
           chrome.notifications.clear(notificationId);
         }
-      }
+      },
     );
 
     chrome.notifications.onClosed.addListener((notificationId, byUser) => {
       console.log(
         `Notification ${notificationId} closed ${
-          byUser ? "by user" : "automatically"
-        }`
+          byUser ? 'by user' : 'automatically'
+        }`,
       );
     });
   }
@@ -168,22 +187,22 @@ class NotificationManager {
   handleExtendTimerFromNotification(tabId) {
     chrome.runtime.sendMessage(
       {
-        action: "extendTimer",
+        action: 'extendTimer',
         tabId: tabId,
         additionalTime: 5 * 60, // 5 minutes
       },
       (response) => {
         if (response && response.success) {
           console.log(
-            `Timer for tab ${tabId} extended by 5 minutes from notification`
+            `Timer for tab ${tabId} extended by 5 minutes from notification`,
           );
         } else {
           console.error(
             `Failed to extend timer for tab ${tabId}:`,
-            response ? response.error : "Unknown error"
+            response ? response.error : 'Unknown error',
           );
         }
-      }
+      },
     );
   }
 
@@ -194,7 +213,7 @@ class NotificationManager {
   handleCancelTimerFromNotification(tabId) {
     chrome.runtime.sendMessage(
       {
-        action: "stopTimer",
+        action: 'stopTimer',
         tabId: tabId,
       },
       (response) => {
@@ -203,10 +222,10 @@ class NotificationManager {
         } else {
           console.error(
             `Failed to cancel timer for tab ${tabId}:`,
-            response ? response.error : "Unknown error"
+            response ? response.error : 'Unknown error',
           );
         }
-      }
+      },
     );
   }
 }
