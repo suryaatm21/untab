@@ -123,9 +123,11 @@ class NotificationManager {
    * Show a notification that a timer was successfully created
    * @param {number} tabId - ID of the tab the timer is for
    * @param {number} duration - Duration of the timer in seconds
+   * @param {boolean} isIteration - Whether this is an iterated timer
+   * @param {boolean} iterateTimer - Whether the timer will iterate after completion
    * @returns {Promise} - Promise that resolves when notification is created
    */
-  notifyTimerCreated(tabId, duration) {
+  notifyTimerCreated(tabId, duration, isIteration, iterateTimer) {
     let timeText = '';
     if (duration > 60) {
       timeText = `${Math.floor(duration / 60)} minutes and ${
@@ -135,10 +137,14 @@ class NotificationManager {
       timeText = `${duration} seconds`;
     }
 
+    const message = isIteration 
+      ? `Tab recreated and will close again in ${timeText} (iteration mode).` 
+      : `Tab will close in ${timeText}.${iterateTimer ? ' Timer will iterate after completion.' : ''}`;
+
     return this.createNotification(
       tabId,
-      'Timer Started',
-      `Tab will close in ${timeText}.`,
+      isIteration ? 'Timer Iterated' : 'Timer Started',
+      message,
       [{ title: 'Ok' }],
     );
   }

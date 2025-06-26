@@ -6,13 +6,16 @@
   </head>
   <body>
     <div class="container">
-      <h2>Fade That</h2>
+      <h2>Fade Tab</h2>
+
+      <div class="stopwatch-bar">
+        <div class="stopwatch-display" id="stopwatch-display">00:00</div>
+      </div>
 
       <!-- Timer display with realistic clock -->
       <div id="timer-container" class="timer-container" style="display: none">
         <div class="realistic-clock">
           <div class="clock-face">
-            <div class="stopwatch-display" id="stopwatch-display">00:00</div>
             <div class="glass-cover"></div>
             <div id="hour-hand" class="hour hand"></div>
             <div id="minute-hand" class="minute hand"></div>
@@ -79,7 +82,7 @@
         </div>
       </div>
 
-      <button id="backButton" class="back-button">← Back to All Timers</button>
+      <button id="backButton" class="back-button">Back to All Timers</button>
 
       <p id="status"></p>
 
@@ -90,7 +93,8 @@
             <input
               type="checkbox"
               id="default-current-tab"
-              class="hidden-xs-up" />
+              class="hidden-xs-up"
+            />
             <label for="default-current-tab" class="cbx"></label>
             <label for="default-current-tab" class="lbl"
               >Always use current tab as default</label
@@ -105,7 +109,8 @@
             id="warning-time"
             value="60"
             min="10"
-            max="300" />
+            max="300"
+          />
         </div>
 
         <div class="checkbox-group">
@@ -114,7 +119,8 @@
               type="checkbox"
               id="enable-notifications"
               class="hidden-xs-up"
-              checked />
+              checked
+            />
             <label for="enable-notifications" class="cbx"></label>
             <label for="enable-notifications" class="lbl"
               >Enable notifications</label

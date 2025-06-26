@@ -61,7 +61,7 @@ function forceTestNotification() {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'startTimer') {
-    const { tabId, duration, warningTime, enableNotifications, tabTitle } =
+    const { tabId, duration, warningTime, enableNotifications, tabTitle, iterateTimer } =
       request;
     // Store timer info
     activeTimers[tabId] = {
@@ -69,6 +69,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       warningTime,
       enableNotifications,
       tabTitle,
+      duration, // Store original duration for iteration
+      iterateTimer, // Store the iteration setting
     };
 
     // Clear existing alarms
@@ -92,7 +94,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Only show notification if explicitly requested
     if (enableNotifications) {
-      notificationManager.notifyTimerCreated(tabId, duration);
+      notificationManager.notifyTimerCreated(tabId, duration, false, iterateTimer);
     }
     sendResponse({ success: true });
     return true;
@@ -358,6 +360,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     const tabId = parseInt(name.split('_')[1]);
     console.log(`Alarm triggered for tab ${tabId}, attempting to close...`);
 
+    // Store the timer data before removing from active timers
+    const timerData = activeTimers[tabId] ? { ...activeTimers[tabId] } : null;
+    
     // Remove from active timers
     if (activeTimers[tabId]) {
       delete activeTimers[tabId];
@@ -382,6 +387,44 @@ chrome.alarms.onAlarm.addListener((alarm) => {
             );
           } else {
             console.log(`Tab ${tabId} (${tab.url}) closed successfully.`);
+            
+            // If iteration is enabled, restart the timer for the same tab URL
+            if (timerData && timerData.iterateTimer) {
+              console.log(`Iteration enabled for tab ${tabId}, creating new tab and restarting timer...`);
+              
+              // Create a new tab with the same URL
+              chrome.tabs.create({ url: tab.url }, (newTab) => {
+                if (chrome.runtime.lastError) {
+                  console.error(
+                    `Failed to create new tab for iteration:`,
+                    chrome.runtime.lastError.message,
+                  );
+                  return;
+                }
+                
+                // Start a new timer for the new tab
+                activeTimers[newTab.id] = {
+                  endTime: Date.now() + (timerData.duration * 1000),
+                  warningTime: timerData.warningTime,
+                  enableNotifications: timerData.enableNotifications,
+                  tabTitle: tab.title || 'Iterated Tab',
+                  duration: timerData.duration,
+                  iterateTimer: true, // Keep iteration enabled
+                };
+                
+                // Schedule new warning and close alarms
+                const warnDelayMin = Math.max(0, (timerData.duration - timerData.warningTime) / 60);
+                chrome.alarms.create('warnTab_' + newTab.id, { delayInMinutes: warnDelayMin });
+                chrome.alarms.create('closeTab_' + newTab.id, { delayInMinutes: timerData.duration / 60 });
+                
+                console.log(`Iteration timer started for new tab ${newTab.id} with duration ${timerData.duration} seconds`);
+                
+                // Show notification for the new iterated timer if notifications were enabled
+                if (timerData.enableNotifications) {
+                  notificationManager.notifyTimerCreated(newTab.id, timerData.duration, true, timerData.iterateTimer);
+                }
+              });
+            }
           }
         });
       } catch (error) {

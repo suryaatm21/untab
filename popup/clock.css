@@ -84,7 +84,7 @@
 
 .stopwatch-display {
   position: absolute;
-  top: -40px;
+  top: -50px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.7);
