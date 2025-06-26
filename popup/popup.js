@@ -286,83 +286,94 @@ function fastForwardTimer(secondsToSkip) {
   hideExtensionUI();
 }
 
-// Update the active timers list in the popup
+// Sort timers based on selected criteria
+function sortTimers(timers, sortBy) {
+  const timerEntries = Object.entries(timers);
+
+  // Process timer data to include remaining time
+  const processedEntries = timerEntries.map(([tabId, timer]) => {
+    let remainingTime = 0;
+    if (timer.paused) {
+      remainingTime = timer.remainingTime;
+    } else {
+      const now = Date.now();
+      remainingTime = Math.max(0, Math.ceil((timer.endTime - now) / 1000));
+    }
+    return [
+      tabId,
+      { ...timer, remainingTime, title: timer.tabTitle || "Unknown Tab" },
+    ];
+  });
+
+  switch (sortBy) {
+    case "alpha":
+      return processedEntries.sort((a, b) =>
+        a[1].title.localeCompare(b[1].title)
+      );
+    case "most-time":
+      return processedEntries.sort(
+        (a, b) => b[1].remainingTime - a[1].remainingTime
+      );
+    case "least-time":
+      return processedEntries.sort(
+        (a, b) => a[1].remainingTime - b[1].remainingTime
+      );
+    default:
+      return processedEntries;
+  }
+}
+
+// Update the active timers list
 function updateActiveTimersList() {
   chrome.runtime.sendMessage({ action: "getAllTimers" }, function (response) {
     const activeTimersList = document.getElementById("active-timers-list");
     const activeTimersContainer = document.getElementById(
       "active-timers-container"
     );
-    const backButton = document.getElementById("backButton");
+    const sortSelect = document.getElementById("timer-sort");
 
     // Clear the list
     activeTimersList.innerHTML = "";
 
     const timers = response && response.timers ? response.timers : {};
-    const timerEntries = Object.entries(timers);
-    if (timerEntries.length > 0) {
-      // Show back button only when there are active timers
-      backButton.style.display = "block";
-      // Show the active timers container
+    const sortedTimers = sortTimers(timers, sortSelect.value);
+
+    if (sortedTimers.length > 0) {
       activeTimersContainer.style.display = "block";
-      // Add each timer to the list
-      timerEntries.forEach(([tabId, timer]) => {
-        const timerItem = document.createElement("li");
-        timerItem.className = "timer-item";
-        if (parseInt(tabId) === currentTabId) {
-          timerItem.classList.add("timer-current-tab");
-        }
-        if (parseInt(tabId) === targetTabId) {
-          timerItem.classList.add("timer-active");
-        }
-        const timerInfo = document.createElement("div");
-        timerInfo.className = "timer-info";
-        const timerTitle = document.createElement("div");
-        timerTitle.className = "timer-title";
-        timerTitle.textContent = timer.tabTitle || `Tab ID: ${tabId}`;
-        timerInfo.appendChild(timerTitle);
-        const timerTime = document.createElement("div");
-        timerTime.className = "timer-time";
-        let remainingTime = 0;
-        if (timer.paused) {
-          remainingTime = timer.remainingTime;
-        } else {
-          const now = Date.now();
-          remainingTime = Math.max(0, Math.ceil((timer.endTime - now) / 1000));
-        }
-        timerTime.textContent = `Remaining: ${formatTime(remainingTime)}`;
-        timerInfo.appendChild(timerTime);
-        timerItem.appendChild(timerInfo);
-        // Add a view/select button
-        const timerAction = document.createElement("div");
-        timerAction.className = "timer-action";
-        const viewButton = document.createElement("button");
-        viewButton.textContent = "View";
+
+      sortedTimers.forEach(([tabId, timer]) => {
+        const li = document.createElement("li");
+        li.className = "timer-item";
+        if (parseInt(tabId) === currentTabId)
+          li.classList.add("timer-current-tab");
+        if (!timer.paused) li.classList.add("timer-active");
+
+        li.innerHTML = `
+          <div class="timer-info">
+            <div class="timer-title">${timer.title}</div>
+            <div class="timer-time">Remaining: ${formatTime(
+              timer.remainingTime
+            )}</div>
+          </div>
+          <div class="timer-action">
+            <button class="view-timer" data-tab-id="${tabId}">VIEW</button>
+          </div>
+        `;
+
+        // Add click handler for the view button
+        const viewButton = li.querySelector(".view-timer");
         viewButton.addEventListener("click", () => {
           targetTabId = parseInt(tabId);
-          showActiveTimer(remainingTime);
+          showActiveTimer(timer.remainingTime);
           document.getElementById("active-timers-container").style.display =
             "none";
           document.getElementById("backButton").style.display = "block";
         });
-        timerAction.appendChild(viewButton);
-        timerItem.appendChild(timerAction);
-        activeTimersList.appendChild(timerItem);
+
+        activeTimersList.appendChild(li);
       });
     } else {
-      // Hide back button when there are no active timers
-      backButton.style.display = "none";
-      // Show a message when no timers are active
-      const timerItem = document.createElement("li");
-      timerItem.className = "timer-item";
-      const timerInfo = document.createElement("div");
-      timerInfo.className = "timer-info";
-      const timerTitle = document.createElement("div");
-      timerTitle.className = "timer-title";
-      timerTitle.textContent = "No active timers";
-      timerInfo.appendChild(timerTitle);
-      timerItem.appendChild(timerInfo);
-      activeTimersList.appendChild(timerItem);
+      activeTimersContainer.style.display = "none";
     }
   });
 }
@@ -865,6 +876,10 @@ function setupEventListeners() {
   document
     .getElementById("stopTimer")
     .addEventListener("click", stopTimerHandler);
+
+  // Add event listener for sort change
+  const sortSelect = document.getElementById("timer-sort");
+  sortSelect.addEventListener("change", updateActiveTimersList);
 }
 
 // Check for active timer when popup opens
