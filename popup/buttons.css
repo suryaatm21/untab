@@ -1,6 +1,6 @@
 /* Standard button styles */
 button {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 16px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -28,7 +28,7 @@ button:before {
   right: 50%;
   bottom: 0;
   opacity: 0;
-  content: '';
+  content: "";
   background-color: #ef5b5b;
   z-index: -1;
 }
@@ -84,22 +84,19 @@ button:active {
   background-color: rgba(29, 105, 129, 0.9);
 }
 
+/* Stop button styling - match pause button but in red */
 #stopTimer {
-  border-color: #fc0303; /* Updated to specified saturated red */
-  color: #fc0303; /* Updated to specified saturated red */
+  border-color: #ef5b5b !important;
+  color: #ef5b5b !important;
   width: 100%;
   font-weight: 600;
   letter-spacing: 1px;
   margin: 8px 0;
+  background: none !important;
 }
 
 #stopTimer:before {
-  background-color: rgba(
-    252,
-    3,
-    3,
-    0.9
-  ); /* Updated to specified saturated red */
+  background-color: rgba(239, 91, 91, 0.9) !important;
 }
 
 /* Back button styling */
