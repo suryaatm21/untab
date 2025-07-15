@@ -48,7 +48,7 @@
   background: #222;
   border-radius: 2px;
   left: 50%;
-  transform-origin: bottom;
+  transform-origin: bottom center;
   transform: translateX(-50%);
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
 }
@@ -56,22 +56,25 @@
 .hour {
   width: 10px;
   height: 100px;
-  top: 70px;
+  top: 50px;
   background: linear-gradient(to bottom, #1d6981, #444);
+  transform-origin: 50% 100%;
 }
 
 .minute {
   width: 6px;
   height: 120px;
-  top: 40px;
+  top: 30px;
   background: linear-gradient(to bottom, #bbb, #666);
+  transform-origin: 50% 100%;
 }
 
 .second {
   width: 3px;
   height: 140px;
-  top: 20px;
+  top: 10px;
   background: #fc0303; /* Updated to specified saturated red */
+  transform-origin: 50% 100%;
 }
 
 .number {

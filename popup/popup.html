@@ -6,7 +6,7 @@
   </head>
   <body>
     <div class="container">
-      <h2>Fade Tab</h2>
+      <h2 class="fade-tab-title">untab</h2>
 
       <div class="stopwatch-bar">
         <div class="stopwatch-display" id="stopwatch-display">00:00</div>
@@ -88,20 +88,6 @@
 
       <div class="settings-toggle" id="toggle-settings">Settings</div>
       <div class="settings-container" id="settings-container">
-        <div class="checkbox-group">
-          <div class="cntr">
-            <input
-              type="checkbox"
-              id="default-current-tab"
-              class="hidden-xs-up"
-            />
-            <label for="default-current-tab" class="cbx"></label>
-            <label for="default-current-tab" class="lbl"
-              >Always use current tab as default</label
-            >
-          </div>
-        </div>
-
         <div class="input-group">
           <label for="warning-time">Warning time (seconds before close):</label>
           <input
@@ -128,14 +114,36 @@
           </div>
         </div>
 
+        <div class="checkbox-group">
+          <div class="cntr">
+            <input
+              type="checkbox"
+              id="iterate-timer"
+              class="hidden-xs-up"
+            />
+            <label for="iterate-timer" class="cbx"></label>
+            <label for="iterate-timer" class="lbl"
+              >Iterate timer (recreate tab and restart timer when it closes)</label
+            >
+          </div>
+        </div>
+
         <div class="test-notification-container">
           <button id="test-notification-button">Test Notifications</button>
-          <!-- Force notification button removed -->
         </div>
       </div>
 
       <div class="active-timers-container" id="active-timers-container">
-        <div class="section-title">All Active Timers:</div>
+        <div class="section-header">
+          <div class="section-title">All Active Timers:</div>
+          <div class="sort-control">
+            <select id="timer-sort" class="timer-sort">
+              <option value="alpha">Alphabetical</option>
+              <option value="most-time">Most Time Left</option>
+              <option value="least-time">Least Time Left</option>
+            </select>
+          </div>
+        </div>
         <ul class="active-timers-list" id="active-timers-list">
           <!-- Active timer items will be populated via JavaScript -->
           <li class="timer-item">

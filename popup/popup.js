@@ -85,6 +85,10 @@ function showActiveTimer(remainingTime) {
   document.getElementById("duration-input").style.display = "none";
   document.getElementById("tab-select-container").style.display = "none";
 
+  // Hide extension containers - only show them when Extend/Fast Forward buttons are clicked
+  document.getElementById("extension-container").style.display = "none";
+  document.getElementById("fast-forward-container").style.display = "none";
+
   // Set pause button text
   document.getElementById("pauseTimer").textContent = "Pause";
   document.getElementById("status").textContent = "Timer active";
@@ -116,6 +120,10 @@ function showPausedTimer(remainingTime) {
   document.getElementById("startTimer").style.display = "none";
   document.getElementById("duration-input").style.display = "none";
   document.getElementById("tab-select-container").style.display = "none";
+
+  // Hide extension containers - only show them when Extend/Fast Forward buttons are clicked
+  document.getElementById("extension-container").style.display = "none";
+  document.getElementById("fast-forward-container").style.display = "none";
 
   // Set UI for paused state
   document.getElementById("pauseTimer").textContent = "Resume";
@@ -500,22 +508,19 @@ function populateTabSelection() {
 // Load settings
 function loadSettings() {
   chrome.storage.sync.get(
-    ["defaultCurrentTab", "warningTime", "enableNotifications"],
+    ["warningTime", "enableNotifications", "iterateTimer"],
     function (result) {
-      document.getElementById("default-current-tab").checked =
-        result.defaultCurrentTab || false;
       document.getElementById("warning-time").value = result.warningTime || 60;
       document.getElementById("enable-notifications").checked =
         result.enableNotifications !== false; // Default to true
+      document.getElementById("iterate-timer").checked =
+        result.iterateTimer || false;
     }
   );
 }
 
 // Save settings
 function saveSettings() {
-  const defaultCurrentTab = document.getElementById(
-    "default-current-tab"
-  ).checked;
   const warningTime = parseInt(
     document.getElementById("warning-time").value,
     10
@@ -523,11 +528,12 @@ function saveSettings() {
   const enableNotifications = document.getElementById(
     "enable-notifications"
   ).checked;
+  const iterateTimer = document.getElementById("iterate-timer").checked;
 
   chrome.storage.sync.set({
-    defaultCurrentTab: defaultCurrentTab,
     warningTime: warningTime,
     enableNotifications: enableNotifications,
+    iterateTimer: iterateTimer,
   });
 }
 
@@ -642,12 +648,13 @@ function startTimerHandler() {
     return;
   }
 
-  // Get warning time from settings
+  // Get warning time and iterate timer setting from settings
   chrome.storage.sync.get(
-    ["warningTime", "enableNotifications"],
+    ["warningTime", "enableNotifications", "iterateTimer"],
     function (result) {
       const warningTime = result.warningTime || 60;
       const enableNotifications = result.enableNotifications !== false;
+      const iterateTimer = result.iterateTimer || false;
 
       // Get selected tab option
       const tabSelect = document.getElementById("tab-select");
@@ -667,7 +674,8 @@ function startTimerHandler() {
             duration,
             warningTime,
             enableNotifications,
-            tab.title
+            tab.title,
+            iterateTimer
           );
         });
       } else {
@@ -684,7 +692,8 @@ function startTimerHandler() {
             duration,
             warningTime,
             enableNotifications,
-            tab.title
+            tab.title,
+            iterateTimer
           );
         });
       }
@@ -698,7 +707,8 @@ function startTimerForTab(
   duration,
   warningTime,
   enableNotifications,
-  tabTitle
+  tabTitle,
+  iterateTimer
 ) {
   targetTabId = tabId;
 
@@ -711,6 +721,7 @@ function startTimerForTab(
       warningTime: warningTime,
       enableNotifications: enableNotifications,
       tabTitle: tabTitle,
+      iterateTimer: iterateTimer,
     },
     function (response) {
       if (response && response.success) {
@@ -794,9 +805,7 @@ function setupEventListeners() {
   document
     .getElementById("toggle-settings")
     .addEventListener("click", toggleSettings);
-  document
-    .getElementById("default-current-tab")
-    .addEventListener("change", saveSettings);
+  // Removed default-current-tab event listener (element no longer exists)
   document
     .getElementById("warning-time")
     .addEventListener("change", saveSettings);

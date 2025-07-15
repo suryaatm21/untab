@@ -30,11 +30,25 @@ h2 {
   font-family: "Poppins", sans-serif;
   color: #ef5b5b;
   margin: 10px 0 15px 0;
-  text-transform: uppercase;
+  /* text-transform removed to allow .fade-tab-title to control capitalization */
   letter-spacing: 2px;
   font-size: 24px;
   text-align: center;
   font-weight: 700;
+  width: 100%;
+}
+
+/* Marketing style for fade tab title */
+.fade-tab-title {
+  font-family: "Poppins", sans-serif;
+  color: #2f4347;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 0.9;
+  text-align: center;
+  /* text-transform removed to preserve HTML capitalization */
+  letter-spacing: -1px;
+  margin: 15px 0 20px 0;
   width: 100%;
 }
 
@@ -133,15 +147,19 @@ select:focus {
 .input-group input,
 .input-group select {
   width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
   padding: 10px 15px;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   font-size: 15px;
   transition: all 0.3s;
-  flex-grow: 1;
   min-width: 0;
   background-color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 .checkbox-group {
@@ -322,6 +340,21 @@ select:focus {
   background-color: #f8f9fa;
   border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.extension-container .input-group,
+.fast-forward-container .input-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0;
+  gap: 7px;
+  text-align: center;
+  padding: 0;
 }
 
 .extension-options {
@@ -447,4 +480,46 @@ select:focus {
 /* Hide elements with this class */
 .hidden {
   display: none;
+}
+
+/* Active timers section styling */
+.section-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 0 15px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.sort-control {
+  flex-shrink: 0;
+}
+
+.timer-sort {
+  padding: 4px 8px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #555;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.timer-sort:hover {
+  border-color: #ef5b5b;
+}
+
+.timer-sort:focus {
+  outline: none;
+  border-color: #ef5b5b;
+  box-shadow: 0 0 0 2px rgba(239, 91, 91, 0.1);
 }
