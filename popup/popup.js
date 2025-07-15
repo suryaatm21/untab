@@ -138,16 +138,28 @@ function showPausedTimer(remainingTime) {
   // Update displays
   document.getElementById("timer-display").textContent =
     formatTime(remainingTime);
-  updateClockHands(remainingTime);
+  
+  // Update stopwatch display at top of clock to show paused time
+  document.getElementById("stopwatch-display").textContent =
+    formatStopwatchTime(remainingTime);
 
-  // Hide stopwatch
-  document.querySelector(".stopwatch-bar").style.display = "none";
+  // Update the clock hands to show current time (even when paused)
+  updateRealTimeClock();
+
+  // Start interval to keep updating the clock hands for current time
+  countdownInterval = setInterval(updateRealTimeClock, 1000);
+
+  // Show stopwatch with paused time
+  document.querySelector(".stopwatch-bar").style.display = "flex";
 }
 
 // Hide active timer UI
 function hideTimerUI() {
   clearInterval(countdownInterval);
-  document.getElementById("timer-container").style.display = "none";
+  
+  // Keep timer-container visible to show clock, but hide timer-specific elements
+  document.getElementById("timer-container").style.display = "block";
+  document.getElementById("timer-display").style.display = "none";
   document.getElementById("timer-controls").style.display = "none";
   document.getElementById("extension-container").style.display = "none";
   document.getElementById("fast-forward-container").style.display = "none";
@@ -155,6 +167,10 @@ function hideTimerUI() {
   document.getElementById("duration-input").style.display = "flex";
   document.getElementById("tab-select-container").style.display = "flex";
   document.getElementById("status").textContent = "";
+
+  // Start clock updating to show current time
+  countdownInterval = setInterval(updateRealTimeClock, 1000);
+  updateRealTimeClock(); // Update immediately
 
   // Hide stopwatch
   document.querySelector(".stopwatch-bar").style.display = "none";
@@ -190,11 +206,18 @@ function togglePauseTimer() {
     const now = new Date().getTime();
     pausedTimeRemaining = Math.ceil((endTime - now) / 1000);
 
+    // Update displays to show paused time
+    document.getElementById("timer-display").textContent = formatTime(pausedTimeRemaining);
+    document.getElementById("stopwatch-display").textContent = formatStopwatchTime(pausedTimeRemaining);
+
     // Update button text and styling
     pauseButton.textContent = "Resume";
     pauseButton.classList.add("resume-button"); // Add resume class
 
     document.getElementById("status").textContent = "Timer paused";
+
+    // Start interval to keep updating the clock hands for current time (even when paused)
+    countdownInterval = setInterval(updateRealTimeClock, 1000);
 
     // Send message to background to pause timer
     chrome.runtime.sendMessage({
@@ -235,6 +258,11 @@ function extendTimer(additionalSeconds) {
 
   if (timerPaused) {
     pausedTimeRemaining += additionalSeconds;
+    
+    // Update displays to show new paused time
+    document.getElementById("timer-display").textContent = formatTime(pausedTimeRemaining);
+    document.getElementById("stopwatch-display").textContent = formatStopwatchTime(pausedTimeRemaining);
+    
     document.getElementById(
       "status"
     ).textContent = `Timer extended by ${additionalSeconds} seconds (paused)`;
@@ -348,7 +376,14 @@ function updateActiveTimersList() {
         viewButton.textContent = "View";
         viewButton.addEventListener("click", () => {
           targetTabId = parseInt(tabId);
-          showActiveTimer(remainingTime);
+          
+          // Show appropriate timer UI based on timer state
+          if (timer.paused) {
+            showPausedTimer(remainingTime);
+          } else {
+            showActiveTimer(remainingTime);
+          }
+          
           document.getElementById("active-timers-container").style.display =
             "none";
           document.getElementById("backButton").style.display = "block";
@@ -389,18 +424,7 @@ function switchToTimer(tabId) {
       targetTabId = tabId;
 
       if (timer.paused) {
-        timerPaused = true;
-        pausedTimeRemaining = timer.remainingTime;
-        document.getElementById("timer-display").textContent =
-          formatTime(pausedTimeRemaining);
-        document.getElementById("timer-display").style.display = "block";
-        document.getElementById("timer-controls").style.display = "flex";
-        document.getElementById("startTimer").style.display = "none";
-        document.getElementById("duration-input").style.display = "none";
-        document.getElementById("tab-select-container").style.display = "none";
-        document.getElementById("pauseTimer").textContent = "Resume";
-        document.getElementById("status").textContent = "Timer paused";
-
+        showPausedTimer(timer.remainingTime);
         // Show back button since we switched to a different timer
         document.getElementById("backButton").style.display = "block";
       } else {
@@ -434,7 +458,8 @@ function backToTimersList() {
   targetTabId = null;
   timerPaused = false;
 
-  // Hide timer management UI
+  // Keep timer-container visible but hide timer-specific elements
+  document.getElementById("timer-container").style.display = "block";
   document.getElementById("timer-display").style.display = "none";
   document.getElementById("timer-controls").style.display = "none";
   document.getElementById("backButton").style.display = "none";
@@ -449,6 +474,10 @@ function backToTimersList() {
   // Show status
   document.getElementById("status").textContent =
     "Returned to all timers view. You can start a new timer.";
+
+  // Start clock updating to show current time
+  countdownInterval = setInterval(updateRealTimeClock, 1000);
+  updateRealTimeClock(); // Update immediately
 
   // Update the list of all active timers
   updateActiveTimersList();
@@ -578,11 +607,6 @@ function checkCurrentTabTimer() {
         // Hide back button when no timer is active
         document.getElementById("backButton").style.display = "none";
       }
-
-      // Always show timer creation controls even if there's an active timer
-      document.getElementById("startTimer").style.display = "block";
-      document.getElementById("duration-input").style.display = "flex";
-      document.getElementById("tab-select-container").style.display = "flex";
 
       // Always update the list of all active timers
       updateActiveTimersList();
@@ -892,9 +916,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Set up event listeners for UI elements
       setupEventListeners();
-
-      // Hide stopwatch initially
-      document.querySelector(".stopwatch-bar").style.display = "none";
     } else {
       document.getElementById("status").textContent = "No active tab found";
     }
