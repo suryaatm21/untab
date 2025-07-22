@@ -199,6 +199,7 @@ select:focus {
 }
 
 /* Stop button styling - match width of pause but style of extend/fast-forward */
+
 #pauseTimer,
 #stopTimer {
   min-height: 48px;
@@ -207,6 +208,35 @@ select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid #ffd600; /* yellow border for pause by default */
+  color: #ffd600;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+}
+
+#pauseTimer.resume-button {
+  border: 2px solid #4caf50; /* green border for resume */
+  color: #4caf50;
+  background: transparent;
+}
+
+#pauseTimer:hover {
+  background: #fffde7;
+  color: #ffd600;
+}
+
+#pauseTimer.resume-button:hover {
+  background: #e8f5e9;
+  color: #4caf50;
+}
+
+#stopTimer {
+  border: 2px solid #ef5b5b;
+  color: #ef5b5b;
+}
+#stopTimer:hover {
+  background: #fff0f0;
+  color: #ef5b5b;
 }
 
 /* Timer controls container - organize buttons in rows */
@@ -223,83 +253,144 @@ select:focus {
   color: #5f6368;
   text-align: center;
   cursor: pointer;
-  margin-top: 5px;
+  margin: 9px 0 3px 0;
   font-size: 15px;
-  transition: color 0.3s;
-  padding: 5px;
+  font-weight: 500;
+  transition: all 0.3s;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  position: relative;
+}
+
+.settings-toggle {
+  /* Already has top divider via :before, so no change needed here */
+}
+
+.settings-divider {
+  width: 100%;
+  height: 1.5px;
+  background: #e0e0e0;
+  margin: 0 0 5px 0;
+  border-radius: 1px;
+  opacity: 0.8;
+}
+}
+.settings-toggle:before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 1px;
+  background: #e0e0e0;
 }
 
 .settings-toggle:hover {
   color: #ef5b5b;
+  background: rgba(239, 91, 91, 0.05);
 }
 
 /* Improved Settings panel styling */
 .settings-container,
 #settings-container {
   width: 100%;
-  margin-top: 16px;
-  padding: 18px 16px 16px 16px;
-  background: #f7f7fa;
+  margin-top: 5px;
+  padding: 14px 18px 14px 18px;
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1.5px 3px rgba(239, 91, 91, 0.03);
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   display: none;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .settings-container .checkbox-group,
 #settings-container .checkbox-group {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
 }
 
 .settings-container .input-group,
 #settings-container .input-group {
-  margin-bottom: 10px;
+  margin: 0;
+  padding: 0 15px;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
 .settings-container label,
 #settings-container label {
   font-size: 15px;
-  color: #444;
+  color: #555;
   font-weight: 500;
-  margin-bottom: 2px;
+  text-align: left;
+  margin-bottom: 4px;
 }
 
 .settings-container input[type="number"],
 #settings-container input[type="number"] {
-  border: 1.5px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 7px 10px;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+  padding: 10px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 15px;
-  background: #fff;
-  transition: border 0.2s;
+  transition: all 0.3s;
+  min-width: 0;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 .settings-container input[type="number"]:focus,
 #settings-container input[type="number"]:focus {
   border-color: #ef5b5b;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 91, 91, 0.1);
 }
 
 .settings-container .test-notification-container,
 #settings-container .test-notification-container {
-  margin-top: 10px;
+  margin: 0;
+  padding: 0 15px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  width: 100%;
 }
+
+.settings-container .test-notification-container button,
+#settings-container .test-notification-container button {
+  width: auto;
+  min-width: 180px;
+  margin: 0;
+}
+
 
 .settings-container .lbl,
 #settings-container .lbl {
-  margin-left: 8px;
-  font-size: 14px;
+  margin-left: 4px;
+  font-size: 15px;
   color: #555;
+  font-weight: 500;
+  display: inline;
+}
+
+.inline-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .settings-container .cbx,
@@ -307,28 +398,6 @@ select:focus {
   margin-right: 4px;
 }
 
-/* Settings toggle */
-#settings-footer {
-  text-align: center;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #e0e0e0;
-}
-
-/* Settings toggle button */
-#toggle-settings {
-  background: none;
-  border: none;
-  color: #5f6368;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 5px;
-  margin: 0;
-}
-
-#toggle-settings:hover {
-  text-decoration: underline;
-}
 
 /* Extensions UI */
 .extension-container,

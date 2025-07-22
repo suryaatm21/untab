@@ -137,9 +137,11 @@ class NotificationManager {
       timeText = `${duration} seconds`;
     }
 
-    const message = isIteration 
-      ? `Tab recreated and will close again in ${timeText} (iteration mode).` 
-      : `Tab will close in ${timeText}.${iterateTimer ? ' Timer will iterate after completion.' : ''}`;
+    const message = isIteration
+      ? `Tab recreated and will close again in ${timeText} (iteration mode).`
+      : `Tab will close in ${timeText}.${
+          iterateTimer ? ' Timer will iterate after completion.' : ''
+        }`;
 
     return this.createNotification(
       tabId,

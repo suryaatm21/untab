@@ -87,6 +87,7 @@
       <p id="status"></p>
 
       <div class="settings-toggle" id="toggle-settings">Settings</div>
+      <div class="settings-divider"></div>
       <div class="settings-container" id="settings-container">
         <div class="input-group">
           <label for="warning-time">Warning time (seconds before close):</label>
@@ -95,37 +96,19 @@
             id="warning-time"
             value="60"
             min="10"
-            max="300"
-          />
+            max="300" />
         </div>
 
-        <div class="checkbox-group">
-          <div class="cntr">
-            <input
-              type="checkbox"
-              id="enable-notifications"
-              class="hidden-xs-up"
-              checked
-            />
-            <label for="enable-notifications" class="cbx"></label>
-            <label for="enable-notifications" class="lbl"
-              >Enable notifications</label
-            >
-          </div>
-        </div>
-
-        <div class="checkbox-group">
-          <div class="cntr">
-            <input
-              type="checkbox"
-              id="iterate-timer"
-              class="hidden-xs-up"
-            />
-            <label for="iterate-timer" class="cbx"></label>
-            <label for="iterate-timer" class="lbl"
-              >Iterate timer (recreate tab and restart timer when it closes)</label
-            >
-          </div>
+        <div class="checkbox-group inline-checkbox">
+          <input
+            type="checkbox"
+            id="enable-notifications"
+            class="hidden-xs-up"
+            checked />
+          <label for="enable-notifications" class="cbx"></label>
+          <label for="enable-notifications" class="lbl"
+            >Enable notifications</label
+          >
         </div>
 
         <div class="test-notification-container">
