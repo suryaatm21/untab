@@ -1,4 +1,3 @@
-
 # Untab
 
 Closes the current or selected tab after a set timer to help manage media consumption and focus.

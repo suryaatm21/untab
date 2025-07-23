@@ -96,9 +96,6 @@ function showActiveTimer(remainingTime) {
   pauseButton.blur(); // Remove focus to prevent persistent fill
   document.getElementById('status').textContent = 'Timer active';
 
-  // Always show back button for all timers
-  document.getElementById('backButton').style.display = 'block';
-
   // Reset pause state
   timerPaused = false;
 
@@ -134,9 +131,6 @@ function showPausedTimer(remainingTime) {
   pauseButton.classList.add('resume-button');
   pauseButton.blur(); // Remove focus to prevent persistent fill
   document.getElementById('status').textContent = 'Timer paused';
-
-  // Always show back button for all timers
-  document.getElementById('backButton').style.display = 'block';
 
   timerPaused = true;
   pausedTimeRemaining = remainingTime;
@@ -332,6 +326,15 @@ function fastForwardTimer(secondsToSkip) {
   hideExtensionUI();
 }
 
+// Debounce utility
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 // Update the active timers list in the popup
 function updateActiveTimersList() {
   chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
@@ -339,7 +342,8 @@ function updateActiveTimersList() {
     const activeTimersContainer = document.getElementById('active-timers-container');
     const backButton = document.getElementById('backButton');
 
-    // Clear the list
+    // Use a document fragment for batch DOM updates
+    const fragment = document.createDocumentFragment();
     activeTimersList.innerHTML = '';
 
     const timers = response && response.timers ? response.timers : {};
@@ -358,24 +362,28 @@ function updateActiveTimersList() {
       } else if (sortType === 'most-time') {
         timerEntries.sort((a, b) => {
           const now = Date.now();
-          const timeA = a[1].paused ? a[1].remainingTime : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
-          const timeB = b[1].paused ? b[1].remainingTime : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
+          const timeA = a[1].paused
+            ? a[1].remainingTime
+            : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
+          const timeB = b[1].paused
+            ? b[1].remainingTime
+            : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
           return timeB - timeA; // Descending
         });
       } else if (sortType === 'least-time') {
         timerEntries.sort((a, b) => {
           const now = Date.now();
-          const timeA = a[1].paused ? a[1].remainingTime : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
-          const timeB = b[1].paused ? b[1].remainingTime : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
+          const timeA = a[1].paused
+            ? a[1].remainingTime
+            : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
+          const timeB = b[1].paused
+            ? b[1].remainingTime
+            : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
           return timeA - timeB; // Ascending
         });
       }
 
-      // Show back button only when there are active timers
-      backButton.style.display = 'block';
-      // Show the active timers container
       activeTimersContainer.style.display = 'block';
-      // Add each timer to the list
       timerEntries.forEach(([tabId, timer]) => {
         const timerItem = document.createElement('li');
         timerItem.className = 'timer-item';
@@ -410,25 +418,21 @@ function updateActiveTimersList() {
         viewButton.textContent = 'View';
         viewButton.addEventListener('click', () => {
           targetTabId = parseInt(tabId);
-
-          // Show appropriate timer UI based on timer state
           if (timer.paused) {
             showPausedTimer(remainingTime);
           } else {
             showActiveTimer(remainingTime);
           }
-
           document.getElementById('active-timers-container').style.display = 'none';
           document.getElementById('backButton').style.display = 'block';
         });
         timerAction.appendChild(viewButton);
         timerItem.appendChild(timerAction);
-        activeTimersList.appendChild(timerItem);
+        fragment.appendChild(timerItem);
       });
+      activeTimersList.appendChild(fragment);
     } else {
-      // Hide back button when there are no active timers
-      backButton.style.display = 'none';
-      // Show a message when no timers are active
+      activeTimersContainer.style.display = 'block';
       const timerItem = document.createElement('li');
       timerItem.className = 'timer-item';
       const timerInfo = document.createElement('div');
@@ -441,6 +445,12 @@ function updateActiveTimersList() {
       activeTimersList.appendChild(timerItem);
     }
   });
+}
+
+// Debounced sort change event
+const sortSelect = document.getElementById('timer-sort');
+if (sortSelect) {
+  sortSelect.addEventListener('change', debounce(updateActiveTimersList, 100));
 }
 
 // Switch to a different timer
@@ -790,6 +800,9 @@ function startTimerForTab(
         clearInterval(countdownInterval);
         showActiveTimer(duration);
 
+        // Show back button when timer is started
+        document.getElementById('backButton').style.display = 'block';
+
         // Store the tab ID of the timer for the popup
         chrome.storage.local.set({ currentTimerTabId: tabId });
 
@@ -935,6 +948,9 @@ function setupEventListeners() {
 
 // Check for active timer when popup opens
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize UI state - hide back button by default
+  document.getElementById('backButton').style.display = 'none';
+  
   // Get the current tab first
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     if (tabs.length > 0) {

@@ -96,23 +96,23 @@
             id="warning-time"
             value="60"
             min="10"
-            max="300" />
+            max="300"
+            class="warning-time-input" />
         </div>
 
-        <div class="checkbox-group inline-checkbox">
-          <input
-            type="checkbox"
-            id="enable-notifications"
-            class="hidden-xs-up"
-            checked />
-          <label for="enable-notifications" class="cbx"></label>
-          <label for="enable-notifications" class="lbl"
-            >Enable notifications</label
-          >
-        </div>
-
-        <div class="test-notification-container">
-          <button id="test-notification-button">Test Notifications</button>
+        <div class="settings-row">
+          <div class="checkbox-group inline-checkbox">
+            <div class="cntr">
+              <input
+                type="checkbox"
+                id="enable-notifications"
+                style="display: none;"
+                checked />
+              <label for="enable-notifications" class="cbx"></label>
+            </div>
+            <label for="enable-notifications" class="lbl">Enable notifications</label>
+          </div>
+          <button id="test-notification-button" class="test-notification-inline">Test Notifications</button>
         </div>
       </div>
 

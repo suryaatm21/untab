@@ -248,12 +248,12 @@ select:focus {
   margin: 10px 0;
 }
 
-/* Settings panel */
+/* Reduce white space between settings and start timer button */
 .settings-toggle {
   color: #5f6368;
   text-align: center;
   cursor: pointer;
-  margin: 9px 0 3px 0;
+  margin: 5px 0 3px 0; /* Reduced top margin from 9px to 5px */
   font-size: 15px;
   font-weight: 500;
   transition: all 0.3s;
@@ -264,8 +264,9 @@ select:focus {
   position: relative;
 }
 
-.settings-toggle {
-  /* Already has top divider via :before, so no change needed here */
+.settings-toggle:hover {
+  color: #ef5b5b;
+  background: rgba(239, 91, 91, 0.05);
 }
 
 .settings-divider {
@@ -276,21 +277,9 @@ select:focus {
   border-radius: 1px;
   opacity: 0.8;
 }
-}
-.settings-toggle:before {
-  content: "";
-  position: absolute;
-  top: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 1px;
-  background: #e0e0e0;
-}
 
-.settings-toggle:hover {
-  color: #ef5b5b;
-  background: rgba(239, 91, 91, 0.05);
+.settings-toggle:before {
+  display: none; /* Hide the linebar */
 }
 
 /* Improved Settings panel styling */
@@ -325,6 +314,27 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+
+/* Adjust spacing for warning time input */
+.warning-time-input {
+  width: calc(100% - 40px) !important; /* Reduce width to create space on right */
+  margin-right: 40px !important; /* Add space to the right */
+  margin-left: 0 !important; /* Override auto centering */
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.test-notification-inline {
+  min-width: 160px;
+  margin: 0;
+  padding: 8px 0;
+  font-size: 14px;
 }
 
 .settings-container label,
@@ -446,24 +456,38 @@ select:focus {
   width: 100%;
   margin-top: 20px;
   margin-bottom: 30px;
-  padding-bottom: 20px;
+  padding-bottom: 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .active-timers-list {
-  width: 100%;
-  margin: 0;
+  width: auto;
+  margin: 0 auto;
   padding: 0;
   list-style: none;
   margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .timer-item {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
   padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: white;
+  flex-direction: row;
+  justify-content: flex-start;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  margin-bottom: 5px;
 }
 
 .timer-item:first-child {
@@ -490,7 +514,7 @@ select:focus {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
+  max-width: 220px;
 }
 
 .timer-time {

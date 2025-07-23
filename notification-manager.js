@@ -40,7 +40,7 @@ class NotificationManager {
     return new Promise((resolve, reject) => {
       try {
         // Directly build and show the notification without checking tab existence
-        const iconUrl = chrome.runtime.getURL('icons/fade-that-monogram.png');
+        const iconUrl = chrome.runtime.getURL('icons/fade-tab-monogram.png');
         this.debug(`Using icon: ${iconUrl}`);
 
         let notificationOptions = {

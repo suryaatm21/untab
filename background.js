@@ -11,7 +11,7 @@ function testNotification() {
   console.log('Creating timer active notification');
   const options = {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/fade-that-monogram.png'),
+    iconUrl: chrome.runtime.getURL('icons/fade-tab-monogram.png'),
     title: 'Fade That Timer Active',
     message: 'A tab timer is now active and counting down.',
     requireInteraction: false,
@@ -35,7 +35,7 @@ function forceTestNotification() {
   // Create a notification with maximum priority and different options
   const options = {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/fade-that-monogram.png'),
+    iconUrl: chrome.runtime.getURL('icons/fade-tab-monogram.png'),
     title: 'Fade That - URGENT TEST',
     message:
       'This is a high-priority test notification. Please check if this appears on your screen.',
@@ -338,7 +338,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       : 0;
     const warningOptions = {
       type: 'basic',
-      iconUrl: chrome.runtime.getURL('icons/fade-that-monogram.png'),
+      iconUrl: chrome.runtime.getURL('icons/fade-tab-monogram.png'),
       title: 'Tab Closing Soon',
       message: `Your tab will close in ${secondsLeft} seconds.`,
       requireInteraction: false,
