@@ -335,55 +335,64 @@ function debounce(fn, delay) {
   };
 }
 
-// Update the active timers list in the popup
+// Sort timers based on selected criteria
+function sortTimers(timers, sortBy) {
+  const timerEntries = Object.entries(timers);
+
+  // Process timer data to include remaining time
+  const processedEntries = timerEntries.map(([tabId, timer]) => {
+    let remainingTime = 0;
+    if (timer.paused) {
+      remainingTime = timer.remainingTime;
+    } else {
+      const now = Date.now();
+      remainingTime = Math.max(0, Math.ceil((timer.endTime - now) / 1000));
+    }
+    return [
+      tabId,
+      { ...timer, remainingTime, title: timer.tabTitle || "Unknown Tab" },
+    ];
+  });
+
+  switch (sortBy) {
+    case "alpha":
+      return processedEntries.sort((a, b) =>
+        a[1].title.localeCompare(b[1].title)
+      );
+    case "most-time":
+      return processedEntries.sort(
+        (a, b) => b[1].remainingTime - a[1].remainingTime
+      );
+    case "least-time":
+      return processedEntries.sort(
+        (a, b) => a[1].remainingTime - b[1].remainingTime
+      );
+    default:
+      return processedEntries;
+  }
+}
+
+// Update the active timers list
 function updateActiveTimersList() {
-  chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
-    const activeTimersList = document.getElementById('active-timers-list');
-    const activeTimersContainer = document.getElementById('active-timers-container');
-    const backButton = document.getElementById('backButton');
+  chrome.runtime.sendMessage({ action: "getAllTimers" }, function (response) {
+    const activeTimersList = document.getElementById("active-timers-list");
+    const activeTimersContainer = document.getElementById(
+      "active-timers-container"
+    );
+    const sortSelect = document.getElementById("timer-sort");
 
     // Use a document fragment for batch DOM updates
     const fragment = document.createDocumentFragment();
     activeTimersList.innerHTML = '';
 
     const timers = response && response.timers ? response.timers : {};
-    let timerEntries = Object.entries(timers);
-    // Sorting logic
-    const sortSelect = document.getElementById('timer-sort');
     const sortType = sortSelect ? sortSelect.value : 'alpha';
-    if (timerEntries.length > 0) {
-      // Sort timerEntries based on selected sortType
-      if (sortType === 'alpha') {
-        timerEntries.sort((a, b) => {
-          const titleA = (a[1].tabTitle || '').toLowerCase();
-          const titleB = (b[1].tabTitle || '').toLowerCase();
-          return titleA.localeCompare(titleB);
-        });
-      } else if (sortType === 'most-time') {
-        timerEntries.sort((a, b) => {
-          const now = Date.now();
-          const timeA = a[1].paused
-            ? a[1].remainingTime
-            : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
-          const timeB = b[1].paused
-            ? b[1].remainingTime
-            : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
-          return timeB - timeA; // Descending
-        });
-      } else if (sortType === 'least-time') {
-        timerEntries.sort((a, b) => {
-          const now = Date.now();
-          const timeA = a[1].paused
-            ? a[1].remainingTime
-            : Math.max(0, Math.ceil((a[1].endTime - now) / 1000));
-          const timeB = b[1].paused
-            ? b[1].remainingTime
-            : Math.max(0, Math.ceil((b[1].endTime - now) / 1000));
-          return timeA - timeB; // Ascending
-        });
-      }
+    
+    if (Object.keys(timers).length > 0) {
+      // Use the sortTimers function to get sorted entries
+      const timerEntries = sortTimers(timers, sortType);
 
-      activeTimersContainer.style.display = 'block';
+      activeTimersContainer.style.display = "block";
       timerEntries.forEach(([tabId, timer]) => {
         const timerItem = document.createElement('li');
         timerItem.className = 'timer-item';
@@ -430,19 +439,11 @@ function updateActiveTimersList() {
         timerItem.appendChild(timerAction);
         fragment.appendChild(timerItem);
       });
+      
+      // Append the fragment to the DOM
       activeTimersList.appendChild(fragment);
     } else {
-      activeTimersContainer.style.display = 'block';
-      const timerItem = document.createElement('li');
-      timerItem.className = 'timer-item';
-      const timerInfo = document.createElement('div');
-      timerInfo.className = 'timer-info';
-      const timerTitle = document.createElement('div');
-      timerTitle.className = 'timer-title';
-      timerTitle.textContent = 'No active timers';
-      timerInfo.appendChild(timerTitle);
-      timerItem.appendChild(timerInfo);
-      activeTimersList.appendChild(timerItem);
+      activeTimersContainer.style.display = "none";
     }
   });
 }
@@ -942,8 +943,12 @@ function setupEventListeners() {
 
   // Stop timer button
   document
-    .getElementById('stopTimer')
-    .addEventListener('click', stopTimerHandler);
+    .getElementById("stopTimer")
+    .addEventListener("click", stopTimerHandler);
+
+  // Add event listener for sort change
+  const sortSelect = document.getElementById("timer-sort");
+  sortSelect.addEventListener("change", updateActiveTimersList);
 }
 
 // Check for active timer when popup opens
