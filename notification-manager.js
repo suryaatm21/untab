@@ -35,6 +35,21 @@ class NotificationManager {
     buttons = [],
     customNotificationId = null,
   ) {
+    // Validate inputs
+    if (typeof tabId !== 'number' || isNaN(tabId) || tabId < 0) {
+      const error = new Error(`Invalid tabId: ${tabId}`);
+      this.debug(`Input validation failed: ${error.message}`);
+      return Promise.reject(error);
+    }
+
+    if (typeof title !== 'string') {
+      title = String(title || 'Fade That');
+    }
+
+    if (typeof message !== 'string') {
+      message = String(message || '');
+    }
+
     this.debug(`Creating notification for tab ${tabId}: "${title}"`);
 
     return new Promise((resolve, reject) => {
@@ -89,9 +104,25 @@ class NotificationManager {
    * Create a warning notification for timer about to expire
    * @param {number} tabId - ID of the tab the timer is for
    * @param {number} secondsLeft - Seconds left before tab closes
-   * @returns {Promise} - Promise that resolves when notification is created
+   * @returns {Promise|void} - Promise that resolves when notification is created, or void if invalid
    */
   createTimerWarningNotification(tabId, secondsLeft) {
+    // Validate tabId and secondsLeft
+    if (typeof tabId !== 'number' || isNaN(tabId) || tabId < 0) {
+      this.debug(`Invalid tabId for warning notification: ${tabId}`);
+      return;
+    }
+    if (
+      typeof secondsLeft !== 'number' ||
+      isNaN(secondsLeft) ||
+      secondsLeft <= 0
+    ) {
+      this.debug(
+        `Not showing warning notification: secondsLeft is ${secondsLeft}`,
+      );
+      return;
+    }
+
     this.debug(
       `Creating warning notification for tab ${tabId} with ${secondsLeft}s remaining`,
     );
@@ -125,9 +156,21 @@ class NotificationManager {
    * @param {number} duration - Duration of the timer in seconds
    * @param {boolean} isIteration - Whether this is an iterated timer
    * @param {boolean} iterateTimer - Whether the timer will iterate after completion
-   * @returns {Promise} - Promise that resolves when notification is created
+   * @returns {Promise|void} - Promise that resolves when notification is created, or void if invalid
    */
   notifyTimerCreated(tabId, duration, isIteration, iterateTimer) {
+    // Validate inputs
+    if (typeof tabId !== 'number' || isNaN(tabId) || tabId < 0) {
+      this.debug(`Invalid tabId for timer created notification: ${tabId}`);
+      return;
+    }
+    if (typeof duration !== 'number' || isNaN(duration) || duration <= 0) {
+      this.debug(
+        `Invalid duration for timer created notification: ${duration}`,
+      );
+      return;
+    }
+
     let timeText = '';
     if (duration > 60) {
       timeText = `${Math.floor(duration / 60)} minutes and ${

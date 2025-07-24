@@ -172,6 +172,9 @@ function hideTimerUI() {
   countdownInterval = setInterval(updateRealTimeClock, 1000);
   updateRealTimeClock(); // Update immediately
 
+  // Update active timers list to ensure it's shown if there are timers
+  updateActiveTimersList();
+
   // Hide stopwatch
   document.querySelector('.stopwatch-bar').style.display = 'none';
 }
@@ -350,22 +353,22 @@ function sortTimers(timers, sortBy) {
     }
     return [
       tabId,
-      { ...timer, remainingTime, title: timer.tabTitle || "Unknown Tab" },
+      { ...timer, remainingTime, title: timer.tabTitle || 'Unknown Tab' },
     ];
   });
 
   switch (sortBy) {
-    case "alpha":
+    case 'alpha':
       return processedEntries.sort((a, b) =>
-        a[1].title.localeCompare(b[1].title)
+        a[1].title.localeCompare(b[1].title),
       );
-    case "most-time":
+    case 'most-time':
       return processedEntries.sort(
-        (a, b) => b[1].remainingTime - a[1].remainingTime
+        (a, b) => b[1].remainingTime - a[1].remainingTime,
       );
-    case "least-time":
+    case 'least-time':
       return processedEntries.sort(
-        (a, b) => a[1].remainingTime - b[1].remainingTime
+        (a, b) => a[1].remainingTime - b[1].remainingTime,
       );
     default:
       return processedEntries;
@@ -374,12 +377,18 @@ function sortTimers(timers, sortBy) {
 
 // Update the active timers list
 function updateActiveTimersList() {
-  chrome.runtime.sendMessage({ action: "getAllTimers" }, function (response) {
-    const activeTimersList = document.getElementById("active-timers-list");
+  chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
+    const activeTimersList = document.getElementById('active-timers-list');
     const activeTimersContainer = document.getElementById(
-      "active-timers-container"
+      'active-timers-container',
     );
-    const sortSelect = document.getElementById("timer-sort");
+    const sortSelect = document.getElementById('timer-sort');
+
+    // Ensure elements exist before proceeding
+    if (!activeTimersList || !activeTimersContainer) {
+      console.warn('Active timers elements not found');
+      return;
+    }
 
     // Use a document fragment for batch DOM updates
     const fragment = document.createDocumentFragment();
@@ -387,12 +396,19 @@ function updateActiveTimersList() {
 
     const timers = response && response.timers ? response.timers : {};
     const sortType = sortSelect ? sortSelect.value : 'alpha';
-    
+
+    console.log(
+      `Updating active timers list with ${Object.keys(timers).length} timers`,
+    );
+
     if (Object.keys(timers).length > 0) {
       // Use the sortTimers function to get sorted entries
       const timerEntries = sortTimers(timers, sortType);
 
-      activeTimersContainer.style.display = "block";
+      // Always show the container when there are timers
+      activeTimersContainer.style.display = 'block';
+      console.log('Showing active timers container');
+
       timerEntries.forEach(([tabId, timer]) => {
         const timerItem = document.createElement('li');
         timerItem.className = 'timer-item';
@@ -432,18 +448,21 @@ function updateActiveTimersList() {
           } else {
             showActiveTimer(remainingTime);
           }
-          document.getElementById('active-timers-container').style.display = 'none';
+          document.getElementById('active-timers-container').style.display =
+            'none';
           document.getElementById('backButton').style.display = 'block';
         });
         timerAction.appendChild(viewButton);
         timerItem.appendChild(timerAction);
         fragment.appendChild(timerItem);
       });
-      
+
       // Append the fragment to the DOM
       activeTimersList.appendChild(fragment);
     } else {
-      activeTimersContainer.style.display = "none";
+      // Hide container when no timers
+      activeTimersContainer.style.display = 'none';
+      console.log('Hiding active timers container (no timers)');
     }
   });
 }
@@ -526,6 +545,21 @@ function backToTimersList() {
   // Update the list of all active timers
   updateActiveTimersList();
 
+  // Ensure active timers container is visible if there are timers
+  // Add a small delay to ensure the update completes
+  setTimeout(() => {
+    chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
+      const timers = response && response.timers ? response.timers : {};
+      const activeTimersContainer = document.getElementById(
+        'active-timers-container',
+      );
+      if (Object.keys(timers).length > 0 && activeTimersContainer) {
+        activeTimersContainer.style.display = 'block';
+        console.log('Ensured active timers container is visible');
+      }
+    });
+  }, 100);
+
   // Hide stopwatch
   document.querySelector('.stopwatch-bar').style.display = 'none';
 }
@@ -583,11 +617,31 @@ function loadSettings() {
   chrome.storage.sync.get(
     ['warningTime', 'enableNotifications', 'iterateTimer'],
     function (result) {
-      document.getElementById('warning-time').value = result.warningTime || 60;
+      console.log('Loading settings:', result);
+
+      const warningTimeInput = document.getElementById('warning-time');
+      let warningTime = result.warningTime;
+
+      // Validate and set default if invalid
+      if (
+        typeof warningTime !== 'number' ||
+        isNaN(warningTime) ||
+        warningTime < 10 ||
+        warningTime > 300
+      ) {
+        warningTime = 60;
+        console.log('Invalid stored warning time, using default:', warningTime);
+      }
+
+      warningTimeInput.value = warningTime;
+
+      console.log(`Set warning time input to: ${warningTime}`);
+
       document.getElementById('enable-notifications').checked =
         result.enableNotifications !== false; // Default to true
-      document.getElementById('iterate-timer').checked =
-        result.iterateTimer || false;
+
+      // Note: iterate-timer checkbox doesn't exist in HTML, skip it
+      console.log('Settings loaded successfully');
     },
   );
 }
@@ -601,12 +655,89 @@ function saveSettings() {
   const enableNotifications = document.getElementById(
     'enable-notifications',
   ).checked;
-  const iterateTimer = document.getElementById('iterate-timer').checked;
 
-  chrome.storage.sync.set({
-    warningTime: warningTime,
-    enableNotifications: enableNotifications,
-    iterateTimer: iterateTimer,
+  // Set iterateTimer to false since the checkbox doesn't exist in UI
+  const iterateTimer = false;
+
+  // Validate warning time
+  if (isNaN(warningTime) || warningTime < 10 || warningTime > 300) {
+    console.error('Invalid warning time:', warningTime);
+    document.getElementById('status').textContent =
+      'Invalid warning time. Must be between 10-300 seconds.';
+    // Reset to saved value or default
+    loadSettings();
+    return;
+  }
+
+  console.log('Saving settings:', {
+    warningTime,
+    enableNotifications,
+    iterateTimer,
+  });
+
+  chrome.storage.sync.set(
+    {
+      warningTime: warningTime,
+      enableNotifications: enableNotifications,
+      iterateTimer: iterateTimer,
+    },
+    function () {
+      if (chrome.runtime.lastError) {
+        console.error('Error saving settings:', chrome.runtime.lastError);
+        document.getElementById('status').textContent =
+          'Error saving settings.';
+      } else {
+        console.log('Settings saved successfully');
+
+        // Update warning time for all active timers
+        chrome.runtime.sendMessage(
+          {
+            action: 'updateWarningTimeForActiveTimers',
+            newWarningTime: warningTime,
+          },
+          function (response) {
+            if (response && response.success) {
+              const message =
+                response.updatedCount > 0
+                  ? `Settings saved! Warning time: ${warningTime}s (${response.updatedCount} active timers updated)`
+                  : `Settings saved! Warning time: ${warningTime}s`;
+              document.getElementById('status').textContent = message;
+              console.log(
+                `Updated warning time for ${response.updatedCount} active timers`,
+              );
+            } else {
+              document.getElementById(
+                'status',
+              ).textContent = `Settings saved! Warning time: ${warningTime}s`;
+            }
+
+            setTimeout(() => {
+              document.getElementById('status').textContent = '';
+            }, 3000);
+          },
+        );
+      }
+    },
+  );
+}
+
+// Ensure active timers container visibility is correct
+function ensureActiveTimersVisibility() {
+  chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
+    const timers = response && response.timers ? response.timers : {};
+    const activeTimersContainer = document.getElementById(
+      'active-timers-container',
+    );
+
+    if (activeTimersContainer) {
+      if (Object.keys(timers).length > 0) {
+        activeTimersContainer.style.display = 'block';
+        console.log('Ensured active timers container is visible');
+      } else {
+        activeTimersContainer.style.display = 'none';
+        console.log('Ensured active timers container is hidden (no timers)');
+      }
+    }
   });
 }
 
@@ -615,6 +746,8 @@ function toggleSettings() {
   const settingsContainer = document.getElementById('settings-container');
   if (settingsContainer.style.display === 'block') {
     settingsContainer.style.display = 'none';
+    // Ensure active timers are visible after closing settings
+    setTimeout(ensureActiveTimersVisibility, 50);
   } else {
     settingsContainer.style.display = 'block';
   }
@@ -654,6 +787,9 @@ function checkCurrentTabTimer() {
 
       // Always update the list of all active timers
       updateActiveTimersList();
+
+      // Ensure container visibility
+      setTimeout(ensureActiveTimersVisibility, 100);
     },
   );
 }
@@ -723,6 +859,13 @@ function startTimerHandler() {
       const warningTime = result.warningTime || 60;
       const enableNotifications = result.enableNotifications !== false;
       const iterateTimer = result.iterateTimer || false;
+
+      console.log('Starting timer with settings:', {
+        warningTime,
+        enableNotifications,
+        iterateTimer,
+        duration,
+      });
 
       // Get selected tab option
       const tabSelect = document.getElementById('tab-select');
@@ -943,19 +1086,19 @@ function setupEventListeners() {
 
   // Stop timer button
   document
-    .getElementById("stopTimer")
-    .addEventListener("click", stopTimerHandler);
+    .getElementById('stopTimer')
+    .addEventListener('click', stopTimerHandler);
 
   // Add event listener for sort change
-  const sortSelect = document.getElementById("timer-sort");
-  sortSelect.addEventListener("change", updateActiveTimersList);
+  const sortSelect = document.getElementById('timer-sort');
+  sortSelect.addEventListener('change', updateActiveTimersList);
 }
 
 // Check for active timer when popup opens
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI state - hide back button by default
   document.getElementById('backButton').style.display = 'none';
-  
+
   // Get the current tab first
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     if (tabs.length > 0) {
@@ -963,13 +1106,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Initialize the UI
       populateTabSelection();
-      loadSettings();
+
+      // Load settings with a slight delay to ensure DOM is fully ready
+      setTimeout(() => {
+        loadSettings();
+      }, 100);
 
       // Check if current tab has a timer
       checkCurrentTabTimer();
 
       // Set up event listeners for UI elements
       setupEventListeners();
+
+      // Ensure active timers container is properly displayed
+      setTimeout(ensureActiveTimersVisibility, 200);
     } else {
       document.getElementById('status').textContent = 'No active tab found';
     }
