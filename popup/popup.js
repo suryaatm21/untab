@@ -637,8 +637,12 @@ function loadSettings() {
 
       console.log(`Set warning time input to: ${warningTime}`);
 
-      document.getElementById('enable-notifications').checked =
-        result.enableNotifications !== false; // Default to true
+      const enableNotificationsElement = document.getElementById('enable-notifications');
+      if (enableNotificationsElement) {
+        enableNotificationsElement.checked = result.enableNotifications !== false; // Default to true
+      } else {
+        console.warn('enable-notifications element not found during loadSettings');
+      }
 
       // Note: iterate-timer checkbox doesn't exist in HTML, skip it
       console.log('Settings loaded successfully');
@@ -652,9 +656,8 @@ function saveSettings() {
     document.getElementById('warning-time').value,
     10,
   );
-  const enableNotifications = document.getElementById(
-    'enable-notifications',
-  ).checked;
+  const enableNotificationsElement = document.getElementById('enable-notifications');
+  const enableNotifications = enableNotificationsElement ? enableNotificationsElement.checked : true;
 
   // Set iterateTimer to false since the checkbox doesn't exist in UI
   const iterateTimer = false;

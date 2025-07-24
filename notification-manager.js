@@ -137,16 +137,17 @@ class NotificationManager {
       timeText = `${secondsLeft} seconds`;
     }
 
-    // Temporarily remove buttons to test if they are causing issues on macOS
-    const buttons = [];
-    // const buttons = [{ title: "Extend by 5 minutes" }, { title: "Cancel Timer" }];
+    // Add buttons for warning notifications
+    const buttons = [{ title: "Extend by 5 minutes" }, { title: "Cancel Timer" }];
 
-    // Call createNotification without a custom ID to allow unique IDs for each warning
+    // Call createNotification with a warning-specific ID to enable button handling
+    const warningNotificationId = `fade-that-notification-warning-${tabId}-${Date.now()}`;
     return this.createNotification(
       tabId,
       'Tab Closing Soon',
       `The tab will close in ${timeText}.`,
-      [],
+      buttons,
+      warningNotificationId
     );
   }
 
@@ -202,7 +203,20 @@ class NotificationManager {
       (notificationId, buttonIndex) => {
         // Extract the tabId from the notification ID
         if (notificationId.startsWith('fade-that-notification-')) {
-          const tabId = parseInt(notificationId.split('-').pop());
+          let tabId;
+          
+          // Handle different notification ID formats
+          if (notificationId.includes('warning')) {
+            // Format: fade-that-notification-warning-{tabId}-{timestamp}
+            const parts = notificationId.split('-');
+            tabId = parseInt(parts[4]); // tabId is the 5th part (index 4)
+          } else {
+            // Format: fade-that-notification-{tabId}-{timestamp}
+            const parts = notificationId.split('-');
+            tabId = parseInt(parts[3]); // tabId is the 4th part (index 3)
+          }
+
+          console.log(`Notification button clicked: ID=${notificationId}, tabId=${tabId}, buttonIndex=${buttonIndex}`);
 
           // Dispatch to appropriate handlers
           if (buttonIndex === 0) {
@@ -236,6 +250,8 @@ class NotificationManager {
    * @param {number} tabId - ID of the tab to extend timer for
    */
   handleExtendTimerFromNotification(tabId) {
+    console.log(`[NotificationManager] Extending timer for tab ${tabId} from notification`);
+    
     chrome.runtime.sendMessage(
       {
         action: 'extendTimer',
@@ -262,6 +278,8 @@ class NotificationManager {
    * @param {number} tabId - ID of the tab to cancel timer for
    */
   handleCancelTimerFromNotification(tabId) {
+    console.log(`[NotificationManager] Canceling timer for tab ${tabId} from notification`);
+    
     chrome.runtime.sendMessage(
       {
         action: 'stopTimer',
