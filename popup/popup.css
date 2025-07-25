@@ -162,6 +162,69 @@ select:focus {
   display: block;
 }
 
+/* Time input row styling */
+.time-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.time-input-row input {
+  width: 70px;
+  text-align: center;
+  margin: 0;
+  padding: 8px 5px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.time-unit {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  min-width: 25px;
+}
+
+/* Time preset buttons */
+.time-presets {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  /* Center horizontally in parent column layout */
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.preset-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #f8f8f8;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 35px;
+}
+
+.preset-btn:hover {
+  background: #e8e8e8;
+  border-color: #b0b0b0;
+}
+
+.preset-btn:active {
+  background: #d8d8d8;
+  transform: translateY(1px);
+}
+
 .checkbox-group {
   width: 100%;
   margin: 12px 0;

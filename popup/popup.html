@@ -33,8 +33,21 @@
       </div>
 
       <div class="input-group" id="duration-input">
-        <label for="duration">Time in seconds:</label>
-        <input type="number" id="duration" value="60" min="1" />
+        <label for="duration">Timer duration:</label>
+        <div class="time-input-row">
+          <input type="number" id="duration-hours" value="0" min="0" max="23" />
+          <span class="time-unit">hr</span>
+          <input type="number" id="duration-minutes" value="1" min="0" max="59" />
+          <span class="time-unit">min</span>
+          <input type="number" id="duration-seconds" value="0" min="0" max="59" />
+          <span class="time-unit">sec</span>
+        </div>
+        <div class="time-presets">
+          <button class="preset-btn" data-hours="0" data-minutes="1" data-seconds="0">1m</button>
+          <button class="preset-btn" data-hours="0" data-minutes="5" data-seconds="0">5m</button>
+          <button class="preset-btn" data-hours="0" data-minutes="25" data-seconds="0">25m</button>
+          <button class="preset-btn" data-hours="1" data-minutes="0" data-seconds="0">1hr</button>
+        </div>
       </div>
 
       <div class="input-group" id="tab-select-container">
@@ -62,8 +75,20 @@
 
       <div class="extension-container" id="extension-container">
         <div class="input-group">
-          <label for="extension-time">Add time (seconds):</label>
-          <input type="number" id="extension-time" value="60" min="10" />
+          <label for="extension-time">Add time:</label>
+          <div class="time-input-row">
+            <input type="number" id="extension-hours" value="0" min="0" max="23" />
+            <span class="time-unit">hr</span>
+            <input type="number" id="extension-minutes" value="1" min="0" max="59" />
+            <span class="time-unit">min</span>
+            <input type="number" id="extension-seconds" value="0" min="0" max="59" />
+            <span class="time-unit">sec</span>
+          </div>
+          <div class="time-presets">
+            <button class="preset-btn" data-target="extension" data-hours="0" data-minutes="0" data-seconds="30">+30s</button>
+            <button class="preset-btn" data-target="extension" data-hours="0" data-minutes="1" data-seconds="0">+1m</button>
+            <button class="preset-btn" data-target="extension" data-hours="0" data-minutes="5" data-seconds="0">+5m</button>
+          </div>
         </div>
         <div class="extension-options">
           <button id="confirm-extend">Extend</button>
@@ -73,8 +98,20 @@
 
       <div class="fast-forward-container" id="fast-forward-container">
         <div class="input-group">
-          <label for="ff-time">Skip ahead (seconds):</label>
-          <input type="number" id="ff-time" value="30" min="5" />
+          <label for="ff-time">Skip ahead:</label>
+          <div class="time-input-row">
+            <input type="number" id="ff-hours" value="0" min="0" max="23" />
+            <span class="time-unit">hr</span>
+            <input type="number" id="ff-minutes" value="0" min="0" max="59" />
+            <span class="time-unit">min</span>
+            <input type="number" id="ff-seconds" value="30" min="0" max="59" />
+            <span class="time-unit">sec</span>
+          </div>
+          <div class="time-presets">
+            <button class="preset-btn" data-target="ff" data-hours="0" data-minutes="0" data-seconds="30">30s</button>
+            <button class="preset-btn" data-target="ff" data-hours="0" data-minutes="1" data-seconds="0">1m</button>
+            <button class="preset-btn" data-target="ff" data-hours="0" data-minutes="5" data-seconds="0">5m</button>
+          </div>
         </div>
         <div class="extension-options">
           <button id="confirm-ff">Fast Forward</button>

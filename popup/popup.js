@@ -5,6 +5,23 @@ let timerPaused = false;
 let pausedTimeRemaining = 0;
 let currentTabId = null;
 
+// Utility functions for time conversion
+function getTotalSecondsFromInputs(hoursId, minutesId, secondsId) {
+  const hours = parseInt(document.getElementById(hoursId).value, 10) || 0;
+  const minutes = parseInt(document.getElementById(minutesId).value, 10) || 0;
+  const seconds = parseInt(document.getElementById(secondsId).value, 10) || 0;
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function setTimeInputsFromSeconds(totalSeconds, hoursId, minutesId, secondsId) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  document.getElementById(hoursId).value = hours;
+  document.getElementById(minutesId).value = minutes;
+  document.getElementById(secondsId).value = seconds;
+}
+
 // Format time as HH:MM:SS
 function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);
@@ -847,10 +864,10 @@ function forceTestNotification() {
 
 // Start timer button click handler
 function startTimerHandler() {
-  let duration = parseInt(document.getElementById('duration').value, 10);
+  let duration = getTotalSecondsFromInputs('duration-hours', 'duration-minutes', 'duration-seconds');
   if (isNaN(duration) || duration <= 0) {
     document.getElementById('status').textContent =
-      'Please enter a valid number of seconds.';
+      'Please enter a valid duration (at least 1 second).';
     console.log('Invalid duration entered');
     return;
   }
@@ -1053,15 +1070,12 @@ function setupEventListeners() {
   document
     .getElementById('confirm-extend')
     .addEventListener('click', function () {
-      const additionalTime = parseInt(
-        document.getElementById('extension-time').value,
-        10,
-      );
+      const additionalTime = getTotalSecondsFromInputs('extension-hours', 'extension-minutes', 'extension-seconds');
       if (!isNaN(additionalTime) && additionalTime > 0) {
         extendTimer(additionalTime);
       } else {
         document.getElementById('status').textContent =
-          'Please enter a valid extension time';
+          'Please enter a valid extension time (at least 1 second)';
       }
     });
   document
@@ -1070,12 +1084,12 @@ function setupEventListeners() {
 
   // Fast forward UI
   document.getElementById('confirm-ff').addEventListener('click', function () {
-    const ffTime = parseInt(document.getElementById('ff-time').value, 10);
+    const ffTime = getTotalSecondsFromInputs('ff-hours', 'ff-minutes', 'ff-seconds');
     if (!isNaN(ffTime) && ffTime > 0) {
       fastForwardTimer(ffTime);
     } else {
       document.getElementById('status').textContent =
-        'Please enter a valid fast-forward time';
+        'Please enter a valid fast-forward time (at least 1 second)';
     }
   });
   document
@@ -1121,6 +1135,12 @@ document.addEventListener('DOMContentLoaded', () => {
       // Set up event listeners for UI elements
       setupEventListeners();
 
+      // Add input validation for seconds fields (max 59)
+      setupTimeInputValidation();
+
+      // Set up preset button handlers
+      setupPresetButtons();
+
       // Ensure active timers container is properly displayed
       setTimeout(ensureActiveTimersVisibility, 200);
     } else {
@@ -1131,3 +1151,101 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Update active timers list periodically
 setInterval(updateActiveTimersList, 5000);
+
+// Set up time input validation
+function setupTimeInputValidation() {
+  const secondsInputs = ['duration-seconds', 'extension-seconds', 'ff-seconds'];
+  
+  secondsInputs.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('input', function() {
+        let value = parseInt(this.value, 10);
+        if (value > 59) {
+          this.value = 59;
+        } else if (value < 0) {
+          this.value = 0;
+        }
+      });
+      
+      input.addEventListener('blur', function() {
+        if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+          this.value = 0;
+        }
+      });
+    }
+  });
+  
+  // Validation for minutes inputs (prevent > 59 or negative values)
+  const minutesInputs = ['duration-minutes', 'extension-minutes', 'ff-minutes'];
+  
+  minutesInputs.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('input', function() {
+        let value = parseInt(this.value, 10);
+        if (value > 59) {
+          this.value = 59;
+        } else if (value < 0) {
+          this.value = 0;
+        }
+      });
+      
+      input.addEventListener('blur', function() {
+        if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+          this.value = 0;
+        }
+      });
+    }
+  });
+  
+  // Validation for hours inputs (prevent > 23 or negative values)
+  const hoursInputs = ['duration-hours', 'extension-hours', 'ff-hours'];
+  
+  hoursInputs.forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener('input', function() {
+        let value = parseInt(this.value, 10);
+        if (value > 23) {
+          this.value = 23;
+        } else if (value < 0) {
+          this.value = 0;
+        }
+      });
+      
+      input.addEventListener('blur', function() {
+        if (this.value === '' || isNaN(parseInt(this.value, 10))) {
+          this.value = 0;
+        }
+      });
+    }
+  });
+}
+
+// Set up preset button handlers
+function setupPresetButtons() {
+  document.querySelectorAll('.preset-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const hours = parseInt(this.dataset.hours, 10) || 0;
+      const minutes = parseInt(this.dataset.minutes, 10) || 0;
+      const seconds = parseInt(this.dataset.seconds, 10) || 0;
+      const target = this.dataset.target;
+      
+      if (target === 'extension') {
+        document.getElementById('extension-hours').value = hours;
+        document.getElementById('extension-minutes').value = minutes;
+        document.getElementById('extension-seconds').value = seconds;
+      } else if (target === 'ff') {
+        document.getElementById('ff-hours').value = hours;
+        document.getElementById('ff-minutes').value = minutes;
+        document.getElementById('ff-seconds').value = seconds;
+      } else {
+        // Default duration inputs
+        document.getElementById('duration-hours').value = hours;
+        document.getElementById('duration-minutes').value = minutes;
+        document.getElementById('duration-seconds').value = seconds;
+      }
+    });
+  });
+}
