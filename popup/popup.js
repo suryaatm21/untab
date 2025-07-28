@@ -196,6 +196,31 @@ function hideTimerUI() {
   document.querySelector('.stopwatch-bar').style.display = 'none';
 }
 
+// Show menu UI (default state for timer creation)
+function showMenuUI() {
+  clearInterval(countdownInterval);
+
+  // Show timer container and menu elements
+  document.getElementById('timer-container').style.display = 'block';
+  document.getElementById('timer-display').style.display = 'none';
+  document.getElementById('timer-controls').style.display = 'none';
+  document.getElementById('extension-container').style.display = 'none';
+  document.getElementById('fast-forward-container').style.display = 'none';
+  document.getElementById('startTimer').style.display = 'block';
+  document.getElementById('duration-input').style.display = 'flex';
+  document.getElementById('tab-select-container').style.display = 'flex';
+  document.getElementById('status').textContent = '';
+
+  // Start clock updating to show current time
+  countdownInterval = setInterval(updateRealTimeClock, 1000);
+  updateRealTimeClock(); // Update immediately
+
+  // Hide stopwatch
+  document.querySelector('.stopwatch-bar').style.display = 'none';
+  
+  console.log('Showing menu UI (timer creation interface)');
+}
+
 // Toggle timer pause state
 function togglePauseTimer() {
   const pauseButton = document.getElementById('pauseTimer');
@@ -394,6 +419,8 @@ function sortTimers(timers, sortBy) {
 
 // Update the active timers list
 function updateActiveTimersList() {
+  console.log('Updating active timers list...');
+  
   chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
     const activeTimersList = document.getElementById('active-timers-list');
     const activeTimersContainer = document.getElementById(
@@ -416,6 +443,7 @@ function updateActiveTimersList() {
 
     console.log(
       `Updating active timers list with ${Object.keys(timers).length} timers`,
+      timers
     );
 
     if (Object.keys(timers).length > 0) {
@@ -431,9 +459,11 @@ function updateActiveTimersList() {
         timerItem.className = 'timer-item';
         if (parseInt(tabId) === currentTabId) {
           timerItem.classList.add('timer-current-tab');
+          console.log(`Marking timer for tab ${tabId} as current tab`);
         }
         if (parseInt(tabId) === targetTabId) {
           timerItem.classList.add('timer-active');
+          console.log(`Marking timer for tab ${tabId} as active timer`);
         }
         const timerInfo = document.createElement('div');
         timerInfo.className = 'timer-info';
@@ -559,7 +589,8 @@ function backToTimersList() {
   countdownInterval = setInterval(updateRealTimeClock, 1000);
   updateRealTimeClock(); // Update immediately
 
-  // Update the list of all active timers
+  // Update the list of all active timers with fresh data
+  console.log('Back button clicked - refreshing active timers list');
   updateActiveTimersList();
 
   // Ensure active timers container is visible if there are timers
@@ -570,12 +601,16 @@ function backToTimersList() {
       const activeTimersContainer = document.getElementById(
         'active-timers-container',
       );
+      console.log(`Back to timers list: found ${Object.keys(timers).length} timers`);
       if (Object.keys(timers).length > 0 && activeTimersContainer) {
         activeTimersContainer.style.display = 'block';
-        console.log('Ensured active timers container is visible');
+        console.log('Ensured active timers container is visible from back button');
+      } else if (activeTimersContainer) {
+        activeTimersContainer.style.display = 'none';
+        console.log('Hidden active timers container (no timers) from back button');
       }
     });
-  }, 100);
+  }, 200);
 
   // Hide stopwatch
   document.querySelector('.stopwatch-bar').style.display = 'none';
@@ -775,15 +810,24 @@ function toggleSettings() {
 
 // Check if the current tab has an active timer
 function checkCurrentTabTimer() {
-  if (!currentTabId) return;
+  if (!currentTabId) {
+    console.warn('No current tab ID available for timer check');
+    return;
+  }
+
+  console.log(`Checking timer for current tab ${currentTabId}`);
 
   chrome.runtime.sendMessage(
     { action: 'checkTimer', tabId: currentTabId },
     function (response) {
+      console.log(`Timer check response for tab ${currentTabId}:`, response);
+      
       if (response && response.active) {
         // Current tab has an active timer
         const timer = response.timer;
         targetTabId = currentTabId;
+
+        console.log(`Found active timer for current tab ${currentTabId}:`, timer);
 
         if (timer.paused) {
           showPausedTimer(timer.remainingTime);
@@ -800,16 +844,20 @@ function checkCurrentTabTimer() {
         document.getElementById('backButton').style.display = 'block';
       } else {
         // Current tab has no timer, show the timer creation UI
+        console.log(`No active timer found for current tab ${currentTabId}`);
         hideTimerUI();
         // Hide back button when no timer is active
         document.getElementById('backButton').style.display = 'none';
       }
 
-      // Always update the list of all active timers
-      updateActiveTimersList();
+      // Always update the list of all active timers after checking current tab
+      // This ensures the active timers list shows even if current tab doesn't have one
+      setTimeout(() => {
+        updateActiveTimersList();
+      }, 50);
 
-      // Ensure container visibility
-      setTimeout(ensureActiveTimersVisibility, 100);
+      // Ensure container visibility is correct
+      setTimeout(ensureActiveTimersVisibility, 150);
     },
   );
 }
@@ -1115,42 +1163,106 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI state - hide back button by default
   document.getElementById('backButton').style.display = 'none';
+  
+  // Hide all UI elements initially to prevent flash
+  document.getElementById('timer-container').style.display = 'none';
+  document.getElementById('timer-controls').style.display = 'none';
+  document.getElementById('startTimer').style.display = 'none';
+  document.getElementById('duration-input').style.display = 'none';
+  document.getElementById('tab-select-container').style.display = 'none';
+  document.getElementById('active-timers-container').style.display = 'none';
 
   // Get the current tab first
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     if (tabs.length > 0) {
       currentTabId = tabs[0].id;
+      console.log(`Popup opened for tab ${currentTabId}: ${tabs[0].title}`);
 
-      // Initialize the UI
-      populateTabSelection();
+      // Check if current tab has a timer FIRST before showing any UI
+      chrome.runtime.sendMessage(
+        { action: 'checkTimer', tabId: currentTabId },
+        function (response) {
+          console.log(`Initial timer check response for tab ${currentTabId}:`, response);
+          
+          if (response && response.active) {
+            // Current tab has an active timer - show timer UI directly
+            const timer = response.timer;
+            targetTabId = currentTabId;
 
-      // Load settings with a slight delay to ensure DOM is fully ready
-      setTimeout(() => {
-        loadSettings();
-      }, 100);
+            console.log(`Found active timer for current tab ${currentTabId}, showing timer UI directly`);
 
-      // Check if current tab has a timer
-      checkCurrentTabTimer();
+            if (timer.paused) {
+              showPausedTimer(timer.remainingTime);
+            } else {
+              const remainingTime = Math.max(
+                0,
+                Math.ceil((timer.endTime - Date.now()) / 1000),
+              );
+              showActiveTimer(remainingTime);
+            }
 
-      // Set up event listeners for UI elements
-      setupEventListeners();
+            document.getElementById('status').textContent = 'Timer active for current tab';
+            document.getElementById('backButton').style.display = 'block';
+          } else {
+            // No timer for current tab - show menu UI
+            console.log(`No active timer for current tab ${currentTabId}, showing menu UI`);
+            showMenuUI();
+          }
 
-      // Add input validation for seconds fields (max 59)
-      setupTimeInputValidation();
+          // Initialize other components after UI is set
+          populateTabSelection();
+          
+          // Load settings
+          setTimeout(() => {
+            loadSettings();
+          }, 50);
 
-      // Set up preset button handlers
-      setupPresetButtons();
+          // Update active timers list
+          updateActiveTimersList();
 
-      // Ensure active timers container is properly displayed
-      setTimeout(ensureActiveTimersVisibility, 200);
+          // Set up event listeners for UI elements
+          setupEventListeners();
+
+          // Add input validation for seconds fields (max 59)
+          setupTimeInputValidation();
+
+          // Set up preset button handlers
+          setupPresetButtons();
+
+          // Final visibility check
+          setTimeout(ensureActiveTimersVisibility, 100);
+        }
+      );
     } else {
       document.getElementById('status').textContent = 'No active tab found';
+      showMenuUI(); // Show menu if no tab found
     }
   });
 });
 
 // Update active timers list periodically
 setInterval(updateActiveTimersList, 5000);
+
+// Add visibility change listener to refresh when popup becomes visible
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    console.log('Popup became visible, refreshing active timers');
+    // Small delay to ensure any pending operations complete
+    setTimeout(() => {
+      updateActiveTimersList();
+      ensureActiveTimersVisibility();
+    }, 100);
+  }
+});
+
+// Also listen for focus events as additional safety
+window.addEventListener('focus', () => {
+  console.log('Popup gained focus, refreshing active timers');
+  setTimeout(() => {
+    updateActiveTimersList();
+    ensureActiveTimersVisibility();
+  }, 100);
+});
 
 // Set up time input validation
 function setupTimeInputValidation() {

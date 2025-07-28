@@ -606,6 +606,15 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   }
 });
 
+// Add tab updated listener to update tab titles when URL changes
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only process when the page has finished loading and we have a timer for this tab
+  if (changeInfo.status === 'complete' && activeTimers[tabId] && tab.title) {
+    console.log(`Tab ${tabId} updated, updating title from "${activeTimers[tabId].tabTitle}" to "${tab.title}"`);
+    activeTimers[tabId].tabTitle = tab.title;
+  }
+});
+
 // Add alarm listener to handle warnings and closing tabs
 chrome.alarms.onAlarm.addListener((alarm) => {
   const name = alarm.name;
