@@ -1,17 +1,93 @@
 import NotificationManager from './notification-manager.js';
 
-// Store active timers
+// Store active timers (will be loaded from storage)
 const activeTimers = {};
 
 // Create notification manager instance
 const notificationManager = new NotificationManager();
+
+// Storage functions for persistent timer state
+async function saveTimerState() {
+  try {
+    await chrome.storage.local.set({ activeTimers });
+    console.log('Timer state saved to storage');
+  } catch (error) {
+    console.error('Failed to save timer state:', error);
+  }
+}
+
+async function loadTimerState() {
+  try {
+    const result = await chrome.storage.local.get(['activeTimers']);
+    if (result.activeTimers) {
+      Object.assign(activeTimers, result.activeTimers);
+      console.log('Loaded timer state from storage:', activeTimers);
+      
+      // Restore alarms for active timers
+      await restoreTimerAlarms();
+    }
+  } catch (error) {
+    console.error('Failed to load timer state:', error);
+  }
+}
+
+async function restoreTimerAlarms() {
+  console.log('Restoring timer alarms...');
+  
+  for (const [tabId, timer] of Object.entries(activeTimers)) {
+    if (timer.paused) {
+      console.log(`Skipping alarm restoration for paused timer on tab ${tabId}`);
+      continue;
+    }
+    
+    const now = Date.now();
+    const remainingTime = Math.max(0, Math.ceil((timer.endTime - now) / 1000));
+    
+    if (remainingTime <= 0) {
+      console.log(`Timer for tab ${tabId} already expired, removing`);
+      delete activeTimers[tabId];
+      continue;
+    }
+    
+    // Clear any existing alarms
+    chrome.alarms.clear('warnTab_' + tabId);
+    chrome.alarms.clear('closeTab_' + tabId);
+    
+    // Restore close alarm
+    const closeDelayMin = remainingTime / 60;
+    if (closeDelayMin >= 0.017) { // 1 second minimum
+      chrome.alarms.create('closeTab_' + tabId, {
+        delayInMinutes: closeDelayMin,
+      });
+      console.log(`Restored close alarm for tab ${tabId}: ${closeDelayMin} minutes`);
+    }
+    
+    // Restore warning alarm if needed
+    if (remainingTime > timer.warningTime && !timer.warningShown) {
+      const warnDelayMin = (remainingTime - timer.warningTime) / 60;
+      if (warnDelayMin >= 0.017) { // 1 second minimum
+        chrome.alarms.create('warnTab_' + tabId, {
+          delayInMinutes: warnDelayMin,
+        });
+        console.log(`Restored warning alarm for tab ${tabId}: ${warnDelayMin} minutes`);
+      }
+    }
+  }
+  
+  // Save the cleaned up state
+  await saveTimerState();
+}
+
+// Load timer state when service worker starts
+chrome.runtime.onStartup.addListener(loadTimerState);
+chrome.runtime.onInstalled.addListener(loadTimerState);
 
 // Test notification function that now shows useful timer info
 function testNotification() {
   console.log('Creating timer active notification');
   const options = {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/fade-tab-monogram.png'),
+    iconUrl: chrome.runtime.getURL('icons/untab-48.png'),
     title: 'Fade That Timer Active',
     message: 'A tab timer is now active and counting down.',
     requireInteraction: false,
@@ -35,7 +111,7 @@ function forceTestNotification() {
   // Create a notification with maximum priority and different options
   const options = {
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/fade-tab-monogram.png'),
+    iconUrl: chrome.runtime.getURL('icons/untab-48.png'),
     title: 'Fade That - URGENT TEST',
     message:
       'This is a high-priority test notification. Please check if this appears on your screen.',
@@ -89,6 +165,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       iterateTimer, // Store the iteration setting
       warningShown: false, // Track if warning has been shown
     };
+
+    // Save state to storage
+    saveTimerState();
 
     // Clear existing alarms
     chrome.alarms.clear('warnTab_' + tabId);
@@ -191,6 +270,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         activeTimers[tabId].paused = true;
         activeTimers[tabId].remainingTime = remainingTime;
 
+        // Save state to storage
+        saveTimerState();
+
         console.log(
           `Timer paused for tab ${tabId}, ${remainingTime} seconds remaining`,
         );
@@ -259,6 +341,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         activeTimers[tabId].warningShown = false;
         // Clear the stored remaining time since we're no longer paused
         delete activeTimers[tabId].remainingTime;
+
+        // Save state to storage
+        saveTimerState();
 
         console.log(
           `Timer resumed for tab ${tabId}, ${resumeDuration} seconds remaining`,
@@ -563,36 +648,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
     });
 
+    // Save updated timer state
+    saveTimerState();
+
     sendResponse({ success: true, updatedCount });
-    return true;
-  } else if (request.action === 'debugAlarms') {
-    // Debug action to check all active alarms
-    chrome.alarms.getAll((alarms) => {
-      console.log('All active alarms:', alarms);
-      const timerAlarms = alarms.filter(
-        (alarm) =>
-          alarm.name.startsWith('warnTab_') ||
-          alarm.name.startsWith('closeTab_'),
-      );
-      sendResponse({ success: true, alarms: timerAlarms });
-    });
-    return true;
-  } else if (request.action === 'debugNotifications') {
-    // Debug helper to check notification settings for active timers
-    const debugInfo = Object.keys(activeTimers).map(tabId => {
-      const timer = activeTimers[tabId];
-      const remainingTime = Math.max(0, Math.ceil((timer.endTime - Date.now()) / 1000));
-      return {
-        tabId: parseInt(tabId),
-        remainingTime,
-        warningTime: timer.warningTime,
-        enableNotifications: timer.enableNotifications,
-        warningShown: timer.warningShown,
-        paused: timer.paused
-      };
-    });
-    console.log('Debug notifications info:', debugInfo);
-    sendResponse({ success: true, debugInfo });
     return true;
   }
 });
@@ -602,6 +661,7 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
   if (activeTimers[tabId]) {
     chrome.alarms.clear('closeTab_' + tabId);
     delete activeTimers[tabId];
+    saveTimerState();
     console.log(`Tab ${tabId} was closed manually, timer cleared`);
   }
 });
@@ -612,6 +672,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && activeTimers[tabId] && tab.title) {
     console.log(`Tab ${tabId} updated, updating title from "${activeTimers[tabId].tabTitle}" to "${tab.title}"`);
     activeTimers[tabId].tabTitle = tab.title;
+    saveTimerState();
   }
 });
 
