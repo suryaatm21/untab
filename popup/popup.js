@@ -217,7 +217,7 @@ function showMenuUI() {
 
   // Hide stopwatch
   document.querySelector('.stopwatch-bar').style.display = 'none';
-  
+
   console.log('Showing menu UI (timer creation interface)');
 }
 
@@ -335,8 +335,10 @@ function extendTimer(additionalSeconds) {
 
 // Fast forward timer
 function fastForwardTimer(secondsToSkip) {
-  console.log(`[Popup] fastForwardTimer called with secondsToSkip: ${secondsToSkip}, targetTabId: ${targetTabId}, timerPaused: ${timerPaused}`);
-  
+  console.log(
+    `[Popup] fastForwardTimer called with secondsToSkip: ${secondsToSkip}, targetTabId: ${targetTabId}, timerPaused: ${timerPaused}`,
+  );
+
   if (!targetTabId) {
     console.error('[Popup] No targetTabId available for fast-forward');
     return;
@@ -359,13 +361,15 @@ function fastForwardTimer(secondsToSkip) {
 
         // Update the UI with new time
         const remainingTime = response.remainingTime;
-        
+
         if (response.paused) {
           // Update paused timer display
           pausedTimeRemaining = remainingTime;
-          document.getElementById('timer-display').textContent = formatTime(remainingTime);
-          document.getElementById('stopwatch-display').textContent = formatStopwatchTime(remainingTime);
-          
+          document.getElementById('timer-display').textContent =
+            formatTime(remainingTime);
+          document.getElementById('stopwatch-display').textContent =
+            formatStopwatchTime(remainingTime);
+
           // Ensure we're still in paused state
           timerPaused = true;
         } else {
@@ -438,7 +442,7 @@ function sortTimers(timers, sortBy) {
 // Update the active timers list
 function updateActiveTimersList() {
   console.log('Updating active timers list...');
-  
+
   chrome.runtime.sendMessage({ action: 'getAllTimers' }, function (response) {
     const activeTimersList = document.getElementById('active-timers-list');
     const activeTimersContainer = document.getElementById(
@@ -461,7 +465,7 @@ function updateActiveTimersList() {
 
     console.log(
       `Updating active timers list with ${Object.keys(timers).length} timers`,
-      timers
+      timers,
     );
 
     if (Object.keys(timers).length > 0) {
@@ -619,13 +623,19 @@ function backToTimersList() {
       const activeTimersContainer = document.getElementById(
         'active-timers-container',
       );
-      console.log(`Back to timers list: found ${Object.keys(timers).length} timers`);
+      console.log(
+        `Back to timers list: found ${Object.keys(timers).length} timers`,
+      );
       if (Object.keys(timers).length > 0 && activeTimersContainer) {
         activeTimersContainer.style.display = 'block';
-        console.log('Ensured active timers container is visible from back button');
+        console.log(
+          'Ensured active timers container is visible from back button',
+        );
       } else if (activeTimersContainer) {
         activeTimersContainer.style.display = 'none';
-        console.log('Hidden active timers container (no timers) from back button');
+        console.log(
+          'Hidden active timers container (no timers) from back button',
+        );
       }
     });
   }, 200);
@@ -707,11 +717,16 @@ function loadSettings() {
 
       console.log(`Set warning time input to: ${warningTime}`);
 
-      const enableNotificationsElement = document.getElementById('enable-notifications');
+      const enableNotificationsElement = document.getElementById(
+        'enable-notifications',
+      );
       if (enableNotificationsElement) {
-        enableNotificationsElement.checked = result.enableNotifications !== false; // Default to true
+        enableNotificationsElement.checked =
+          result.enableNotifications !== false; // Default to true
       } else {
-        console.warn('enable-notifications element not found during loadSettings');
+        console.warn(
+          'enable-notifications element not found during loadSettings',
+        );
       }
 
       // Note: iterate-timer checkbox doesn't exist in HTML, skip it
@@ -726,8 +741,12 @@ function saveSettings() {
     document.getElementById('warning-time').value,
     10,
   );
-  const enableNotificationsElement = document.getElementById('enable-notifications');
-  const enableNotifications = enableNotificationsElement ? enableNotificationsElement.checked : true;
+  const enableNotificationsElement = document.getElementById(
+    'enable-notifications',
+  );
+  const enableNotifications = enableNotificationsElement
+    ? enableNotificationsElement.checked
+    : true;
 
   // Set iterateTimer to false since the checkbox doesn't exist in UI
   const iterateTimer = false;
@@ -839,13 +858,16 @@ function checkCurrentTabTimer() {
     { action: 'checkTimer', tabId: currentTabId },
     function (response) {
       console.log(`Timer check response for tab ${currentTabId}:`, response);
-      
+
       if (response && response.active) {
         // Current tab has an active timer
         const timer = response.timer;
         targetTabId = currentTabId;
 
-        console.log(`Found active timer for current tab ${currentTabId}:`, timer);
+        console.log(
+          `Found active timer for current tab ${currentTabId}:`,
+          timer,
+        );
 
         if (timer.paused) {
           showPausedTimer(timer.remainingTime);
@@ -930,7 +952,11 @@ function forceTestNotification() {
 
 // Start timer button click handler
 function startTimerHandler() {
-  let duration = getTotalSecondsFromInputs('duration-hours', 'duration-minutes', 'duration-seconds');
+  let duration = getTotalSecondsFromInputs(
+    'duration-hours',
+    'duration-minutes',
+    'duration-seconds',
+  );
   if (isNaN(duration) || duration <= 0) {
     document.getElementById('status').textContent =
       'Please enter a valid duration (at least 1 second).';
@@ -1127,8 +1153,10 @@ function setupEventListeners() {
     .addEventListener('click', showExtensionUI);
   document
     .getElementById('fastForwardTimer')
-    .addEventListener('click', function() {
-      console.log(`[Popup] Fast Forward button clicked. timerPaused: ${timerPaused}, targetTabId: ${targetTabId}`);
+    .addEventListener('click', function () {
+      console.log(
+        `[Popup] Fast Forward button clicked. timerPaused: ${timerPaused}, targetTabId: ${targetTabId}`,
+      );
       showFastForwardUI();
     });
   document
@@ -1139,7 +1167,11 @@ function setupEventListeners() {
   document
     .getElementById('confirm-extend')
     .addEventListener('click', function () {
-      const additionalTime = getTotalSecondsFromInputs('extension-hours', 'extension-minutes', 'extension-seconds');
+      const additionalTime = getTotalSecondsFromInputs(
+        'extension-hours',
+        'extension-minutes',
+        'extension-seconds',
+      );
       if (!isNaN(additionalTime) && additionalTime > 0) {
         extendTimer(additionalTime);
       } else {
@@ -1153,8 +1185,14 @@ function setupEventListeners() {
 
   // Fast forward UI
   document.getElementById('confirm-ff').addEventListener('click', function () {
-    const ffTime = getTotalSecondsFromInputs('ff-hours', 'ff-minutes', 'ff-seconds');
-    console.log(`[Popup] Fast-forward confirm clicked. ffTime: ${ffTime}, timerPaused: ${timerPaused}`);
+    const ffTime = getTotalSecondsFromInputs(
+      'ff-hours',
+      'ff-minutes',
+      'ff-seconds',
+    );
+    console.log(
+      `[Popup] Fast-forward confirm clicked. ffTime: ${ffTime}, timerPaused: ${timerPaused}`,
+    );
     if (!isNaN(ffTime) && ffTime > 0) {
       fastForwardTimer(ffTime);
     } else {
@@ -1182,15 +1220,17 @@ function setupEventListeners() {
 }
 
 // Debug function to test fast-forward manually
-window.debugFastForward = function(seconds) {
+window.debugFastForward = function (seconds) {
   console.log(`[Debug] Manual fast-forward test with ${seconds} seconds`);
-  console.log(`[Debug] Current state: targetTabId=${targetTabId}, timerPaused=${timerPaused}, pausedTimeRemaining=${pausedTimeRemaining}`);
-  
+  console.log(
+    `[Debug] Current state: targetTabId=${targetTabId}, timerPaused=${timerPaused}, pausedTimeRemaining=${pausedTimeRemaining}`,
+  );
+
   if (!targetTabId) {
     console.error('[Debug] No targetTabId - cannot test fast-forward');
     return;
   }
-  
+
   fastForwardTimer(seconds || 30);
 };
 
@@ -1198,7 +1238,7 @@ window.debugFastForward = function(seconds) {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI state - hide back button by default
   document.getElementById('backButton').style.display = 'none';
-  
+
   // Hide all UI elements initially to prevent flash
   document.getElementById('timer-container').style.display = 'none';
   document.getElementById('timer-controls').style.display = 'none';
@@ -1217,14 +1257,19 @@ document.addEventListener('DOMContentLoaded', () => {
       chrome.runtime.sendMessage(
         { action: 'checkTimer', tabId: currentTabId },
         function (response) {
-          console.log(`Initial timer check response for tab ${currentTabId}:`, response);
-          
+          console.log(
+            `Initial timer check response for tab ${currentTabId}:`,
+            response,
+          );
+
           if (response && response.active) {
             // Current tab has an active timer - show timer UI directly
             const timer = response.timer;
             targetTabId = currentTabId;
 
-            console.log(`Found active timer for current tab ${currentTabId}, showing timer UI directly`);
+            console.log(
+              `Found active timer for current tab ${currentTabId}, showing timer UI directly`,
+            );
 
             if (timer.paused) {
               showPausedTimer(timer.remainingTime);
@@ -1236,17 +1281,20 @@ document.addEventListener('DOMContentLoaded', () => {
               showActiveTimer(remainingTime);
             }
 
-            document.getElementById('status').textContent = 'Timer active for current tab';
+            document.getElementById('status').textContent =
+              'Timer active for current tab';
             document.getElementById('backButton').style.display = 'block';
           } else {
             // No timer for current tab - show menu UI
-            console.log(`No active timer for current tab ${currentTabId}, showing menu UI`);
+            console.log(
+              `No active timer for current tab ${currentTabId}, showing menu UI`,
+            );
             showMenuUI();
           }
 
           // Initialize other components after UI is set
           populateTabSelection();
-          
+
           // Load settings
           setTimeout(() => {
             loadSettings();
@@ -1266,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Final visibility check
           setTimeout(ensureActiveTimersVisibility, 100);
-        }
+        },
       );
     } else {
       document.getElementById('status').textContent = 'No active tab found';
@@ -1302,11 +1350,11 @@ window.addEventListener('focus', () => {
 // Set up time input validation
 function setupTimeInputValidation() {
   const secondsInputs = ['duration-seconds', 'extension-seconds', 'ff-seconds'];
-  
-  secondsInputs.forEach(inputId => {
+
+  secondsInputs.forEach((inputId) => {
     const input = document.getElementById(inputId);
     if (input) {
-      input.addEventListener('input', function() {
+      input.addEventListener('input', function () {
         let value = parseInt(this.value, 10);
         if (value > 59) {
           this.value = 59;
@@ -1314,22 +1362,22 @@ function setupTimeInputValidation() {
           this.value = 0;
         }
       });
-      
-      input.addEventListener('blur', function() {
+
+      input.addEventListener('blur', function () {
         if (this.value === '' || isNaN(parseInt(this.value, 10))) {
           this.value = 0;
         }
       });
     }
   });
-  
+
   // Validation for minutes inputs (prevent > 59 or negative values)
   const minutesInputs = ['duration-minutes', 'extension-minutes', 'ff-minutes'];
-  
-  minutesInputs.forEach(inputId => {
+
+  minutesInputs.forEach((inputId) => {
     const input = document.getElementById(inputId);
     if (input) {
-      input.addEventListener('input', function() {
+      input.addEventListener('input', function () {
         let value = parseInt(this.value, 10);
         if (value > 59) {
           this.value = 59;
@@ -1337,22 +1385,22 @@ function setupTimeInputValidation() {
           this.value = 0;
         }
       });
-      
-      input.addEventListener('blur', function() {
+
+      input.addEventListener('blur', function () {
         if (this.value === '' || isNaN(parseInt(this.value, 10))) {
           this.value = 0;
         }
       });
     }
   });
-  
+
   // Validation for hours inputs (prevent > 23 or negative values)
   const hoursInputs = ['duration-hours', 'extension-hours', 'ff-hours'];
-  
-  hoursInputs.forEach(inputId => {
+
+  hoursInputs.forEach((inputId) => {
     const input = document.getElementById(inputId);
     if (input) {
-      input.addEventListener('input', function() {
+      input.addEventListener('input', function () {
         let value = parseInt(this.value, 10);
         if (value > 23) {
           this.value = 23;
@@ -1360,8 +1408,8 @@ function setupTimeInputValidation() {
           this.value = 0;
         }
       });
-      
-      input.addEventListener('blur', function() {
+
+      input.addEventListener('blur', function () {
         if (this.value === '' || isNaN(parseInt(this.value, 10))) {
           this.value = 0;
         }
@@ -1372,13 +1420,13 @@ function setupTimeInputValidation() {
 
 // Set up preset button handlers
 function setupPresetButtons() {
-  document.querySelectorAll('.preset-btn').forEach(button => {
-    button.addEventListener('click', function() {
+  document.querySelectorAll('.preset-btn').forEach((button) => {
+    button.addEventListener('click', function () {
       const hours = parseInt(this.dataset.hours, 10) || 0;
       const minutes = parseInt(this.dataset.minutes, 10) || 0;
       const seconds = parseInt(this.dataset.seconds, 10) || 0;
       const target = this.dataset.target;
-      
+
       if (target === 'extension') {
         document.getElementById('extension-hours').value = hours;
         document.getElementById('extension-minutes').value = minutes;
