@@ -94,7 +94,7 @@
   color: #fc0303; /* Updated to specified saturated red */
   padding: 5px 10px;
   border-radius: 10px;
-  font-family: 'Inter', monospace;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 22px;
   font-weight: bold;
   z-index: 10;
