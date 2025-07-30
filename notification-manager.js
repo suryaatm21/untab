@@ -54,9 +54,8 @@ class NotificationManager {
 
     return new Promise((resolve, reject) => {
       try {
-        // Directly build and show the notification without checking tab existence
-        const iconUrl = chrome.runtime.getURL('icons/untab-48.png');
-        this.debug(`Using icon: ${iconUrl}`);
+                const iconUrl = chrome.runtime.getURL('icons/untab-48.png');
+                this.debug(`Using icon: ${iconUrl}`);
 
         let notificationOptions = {
           type: 'basic',

@@ -375,10 +375,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (activeTimers[numericTabId].paused) {
           // If paused, just update the remaining time
           activeTimers[numericTabId].remainingTime += additionalTime;
+          
+          // Save state to storage
+          saveTimerState();
+          
           console.log(
             `Paused timer extended for tab ${numericTabId} by ${additionalTime} seconds`,
           );
-          sendResponse({ success: true });
+          sendResponse({ success: true, paused: true });
         } else {
           // Clear existing alarms aggressively
           console.log(`Clearing all alarms for tab ${numericTabId} before extending`);
@@ -435,10 +439,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           activeTimers[numericTabId].endTime = newEndTime;
           activeTimers[numericTabId].warningShown = false;
 
+          // Save state to storage
+          saveTimerState();
+
           console.log(
             `Timer extended for tab ${numericTabId} by ${additionalTime} seconds`,
           );
-          sendResponse({ success: true });
+          sendResponse({ success: true, paused: false });
         }
       } else {
         console.log(`No active timer found for tab ${numericTabId}. Active timers:`, Object.keys(activeTimers));
@@ -460,60 +467,89 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log(`Converted tabId to: ${numericTabId} (type: ${typeof numericTabId})`);
     
     try {
-      if (activeTimers[numericTabId] && !activeTimers[numericTabId].paused) {
-        console.log(`Found active timer for tab ${numericTabId}:`, activeTimers[numericTabId]);
+      if (activeTimers[numericTabId]) {
+        console.log(`Found timer for tab ${numericTabId}:`, activeTimers[numericTabId]);
         
-        // Clear existing alarms
-        chrome.alarms.clear('warnTab_' + numericTabId);
-        chrome.alarms.clear('closeTab_' + numericTabId);
+        if (activeTimers[numericTabId].paused) {
+          // Handle fast-forward for paused timer
+          const currentRemainingTime = activeTimers[numericTabId].remainingTime;
+          const newRemainingTime = Math.max(1, currentRemainingTime - secondsToSkip);
+          
+          console.log(`[Background] Paused timer fast-forward details:`);
+          console.log(`  - Current remaining time: ${currentRemainingTime}s`);
+          console.log(`  - Seconds to skip: ${secondsToSkip}s`);
+          console.log(`  - New remaining time: ${newRemainingTime}s`);
+          
+          // Update the stored remaining time
+          activeTimers[numericTabId].remainingTime = newRemainingTime;
+          
+          // Save state to storage
+          saveTimerState();
+          
+          console.log(
+            `Paused timer fast-forwarded for tab ${numericTabId} by ${secondsToSkip} seconds. Remaining: ${newRemainingTime}s`,
+          );
+          sendResponse({
+            success: true,
+            remainingTime: newRemainingTime,
+            paused: true,
+          });
+        } else {
+          // Handle fast-forward for active timer
+          // Clear existing alarms
+          chrome.alarms.clear('warnTab_' + numericTabId);
+          chrome.alarms.clear('closeTab_' + numericTabId);
 
-        // Update endTime by subtracting seconds from it
-        const newEndTime = activeTimers[numericTabId].endTime - secondsToSkip * 1000;
-        const remainingSeconds = Math.max(1, (newEndTime - Date.now()) / 1000);
+          // Update endTime by subtracting seconds from it
+          const newEndTime = activeTimers[numericTabId].endTime - secondsToSkip * 1000;
+          const remainingSeconds = Math.max(1, (newEndTime - Date.now()) / 1000);
 
-        // Create new close alarm with updated time
-        chrome.alarms.create('closeTab_' + numericTabId, {
-          delayInMinutes: remainingSeconds / 60,
-        });
+          // Create new close alarm with updated time
+          chrome.alarms.create('closeTab_' + numericTabId, {
+            delayInMinutes: remainingSeconds / 60,
+          });
 
-        // Reschedule warning if applicable
-        const warningTime = activeTimers[numericTabId].warningTime || 60;
-        if (remainingSeconds > warningTime) {
-          const warnDelayMin = (remainingSeconds - warningTime) / 60;
-          // Use a more lenient threshold (2 seconds minimum)
-          if (warnDelayMin >= 0.033) { // 2 seconds = 0.033 minutes
-            chrome.alarms.create('warnTab_' + numericTabId, {
-              delayInMinutes: warnDelayMin,
-            });
-            console.log(
-              `Rescheduled warning alarm for tab ${numericTabId}: ${warnDelayMin} minutes (${(warnDelayMin * 60).toFixed(1)}s)`
-            );
+          // Reschedule warning if applicable
+          const warningTime = activeTimers[numericTabId].warningTime || 60;
+          if (remainingSeconds > warningTime) {
+            const warnDelayMin = (remainingSeconds - warningTime) / 60;
+            // Use a more lenient threshold (2 seconds minimum)
+            if (warnDelayMin >= 0.033) { // 2 seconds = 0.033 minutes
+              chrome.alarms.create('warnTab_' + numericTabId, {
+                delayInMinutes: warnDelayMin,
+              });
+              console.log(
+                `Rescheduled warning alarm for tab ${numericTabId}: ${warnDelayMin} minutes (${(warnDelayMin * 60).toFixed(1)}s)`
+              );
+            } else {
+              console.log(
+                `Skipped warning alarm for tab ${numericTabId}: warning delay too short (${(warnDelayMin * 60).toFixed(1)}s < 2s minimum)`
+              );
+            }
           } else {
             console.log(
-              `Skipped warning alarm for tab ${numericTabId}: warning delay too short (${(warnDelayMin * 60).toFixed(1)}s < 2s minimum)`
+              `Skipped warning alarm for tab ${numericTabId}: ${remainingSeconds}s remaining ≤ ${warningTime}s warning time`
             );
           }
-        } else {
+
+          // Update timer state and reset warning flag
+          activeTimers[numericTabId].endTime = newEndTime;
+          activeTimers[numericTabId].warningShown = false;
+
+          // Save state to storage
+          saveTimerState();
+
           console.log(
-            `Skipped warning alarm for tab ${numericTabId}: ${remainingSeconds}s remaining ≤ ${warningTime}s warning time`
+            `Active timer fast-forwarded for tab ${numericTabId} by ${secondsToSkip} seconds`,
           );
+          sendResponse({
+            success: true,
+            remainingTime: Math.ceil(remainingSeconds),
+            paused: false,
+          });
         }
-
-        // Update timer state and reset warning flag
-        activeTimers[numericTabId].endTime = newEndTime;
-        activeTimers[numericTabId].warningShown = false;
-
-        console.log(
-          `Timer fast-forwarded for tab ${numericTabId} by ${secondsToSkip} seconds`,
-        );
-        sendResponse({
-          success: true,
-          remainingTime: Math.ceil(remainingSeconds),
-        });
       } else {
-        const errorMsg = activeTimers[numericTabId]
-          ? 'Cannot fast-forward a paused timer'
-          : 'No active timer found';
+        const errorMsg = 'No timer found';
         console.log(`${errorMsg} for tab ${numericTabId}. Active timers:`, Object.keys(activeTimers));
         sendResponse({ success: false, error: errorMsg });
       }

@@ -335,7 +335,12 @@ function extendTimer(additionalSeconds) {
 
 // Fast forward timer
 function fastForwardTimer(secondsToSkip) {
-  if (!targetTabId) return;
+  console.log(`[Popup] fastForwardTimer called with secondsToSkip: ${secondsToSkip}, targetTabId: ${targetTabId}, timerPaused: ${timerPaused}`);
+  
+  if (!targetTabId) {
+    console.error('[Popup] No targetTabId available for fast-forward');
+    return;
+  }
 
   // Send message to background to fast forward timer
   chrome.runtime.sendMessage(
@@ -345,6 +350,7 @@ function fastForwardTimer(secondsToSkip) {
       secondsToSkip: secondsToSkip,
     },
     function (response) {
+      console.log('[Popup] Received fast-forward response:', response);
       if (response && response.success) {
         console.log(`Timer fast-forwarded by ${secondsToSkip} seconds`);
         document.getElementById(
@@ -353,8 +359,20 @@ function fastForwardTimer(secondsToSkip) {
 
         // Update the UI with new time
         const remainingTime = response.remainingTime;
-        endTime = new Date().getTime() + remainingTime * 1000;
-        updateTimerDisplay();
+        
+        if (response.paused) {
+          // Update paused timer display
+          pausedTimeRemaining = remainingTime;
+          document.getElementById('timer-display').textContent = formatTime(remainingTime);
+          document.getElementById('stopwatch-display').textContent = formatStopwatchTime(remainingTime);
+          
+          // Ensure we're still in paused state
+          timerPaused = true;
+        } else {
+          // Update active timer display
+          endTime = new Date().getTime() + remainingTime * 1000;
+          updateTimerDisplay();
+        }
 
         // Also update the active timers list
         updateActiveTimersList();
@@ -1109,7 +1127,10 @@ function setupEventListeners() {
     .addEventListener('click', showExtensionUI);
   document
     .getElementById('fastForwardTimer')
-    .addEventListener('click', showFastForwardUI);
+    .addEventListener('click', function() {
+      console.log(`[Popup] Fast Forward button clicked. timerPaused: ${timerPaused}, targetTabId: ${targetTabId}`);
+      showFastForwardUI();
+    });
   document
     .getElementById('backButton')
     .addEventListener('click', backToTimersList);
@@ -1133,6 +1154,7 @@ function setupEventListeners() {
   // Fast forward UI
   document.getElementById('confirm-ff').addEventListener('click', function () {
     const ffTime = getTotalSecondsFromInputs('ff-hours', 'ff-minutes', 'ff-seconds');
+    console.log(`[Popup] Fast-forward confirm clicked. ffTime: ${ffTime}, timerPaused: ${timerPaused}`);
     if (!isNaN(ffTime) && ffTime > 0) {
       fastForwardTimer(ffTime);
     } else {
@@ -1158,6 +1180,19 @@ function setupEventListeners() {
   const sortSelect = document.getElementById('timer-sort');
   sortSelect.addEventListener('change', updateActiveTimersList);
 }
+
+// Debug function to test fast-forward manually
+window.debugFastForward = function(seconds) {
+  console.log(`[Debug] Manual fast-forward test with ${seconds} seconds`);
+  console.log(`[Debug] Current state: targetTabId=${targetTabId}, timerPaused=${timerPaused}, pausedTimeRemaining=${pausedTimeRemaining}`);
+  
+  if (!targetTabId) {
+    console.error('[Debug] No targetTabId - cannot test fast-forward');
+    return;
+  }
+  
+  fastForwardTimer(seconds || 30);
+};
 
 // Check for active timer when popup opens
 document.addEventListener('DOMContentLoaded', () => {
