@@ -90,6 +90,10 @@ async function restoreTimerAlarms() {
 chrome.runtime.onStartup.addListener(loadTimerState);
 chrome.runtime.onInstalled.addListener(loadTimerState);
 
+// Ensure timer state is loaded whenever the service worker starts (e.g., after Chrome suspends and restarts the service worker).
+// This prevents the popup from missing active timer information when reopened.
+loadTimerState();
+
 // Test notification function that now shows useful timer info
 function testNotification() {
   console.log('Creating timer active notification');
