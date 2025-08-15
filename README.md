@@ -2,7 +2,7 @@
 
 ## Watch the Demo
 
-[![Watch the demo](https://i.imgur.com/EjZyC3m.png)](https://youtu.be/oDh19udD8h0)
+[![Watch the demo](https://i.imgur.com/EjZyC3m.png)](https://www.youtube.com/watch?v=__5yO1m-CKI)
 
 Closes the current or selected tab after a set timer to help manage media consumption and focus.
 
