@@ -4,6 +4,7 @@
 
 import { formatTime, formatStopwatchTime } from "../utils/time-utils.js";
 import * as TimerState from "../state/timer-state.js";
+import { updateActiveTimersList } from "./active-timers-list.js";
 
 /**
  * Update the timer display with remaining time
@@ -69,6 +70,7 @@ export function updateRealTimeClock() {
 export function showActiveTimer(remainingTime) {
   // Show timer elements
   document.getElementById("timer-container").style.display = "block";
+  document.getElementById("timer-display").style.display = "block";
   document.getElementById("timer-controls").style.display = "flex";
 
   // Hide input elements
@@ -109,6 +111,7 @@ export function showPausedTimer(remainingTime) {
 
   // Show timer elements
   document.getElementById("timer-container").style.display = "block";
+  document.getElementById("timer-display").style.display = "block";
   document.getElementById("timer-controls").style.display = "flex";
 
   // Hide input elements
@@ -171,6 +174,9 @@ export function hideTimerUI() {
 
   // Hide stopwatch
   document.querySelector(".stopwatch-bar").style.display = "none";
+
+  // Update active timers list to reflect timer completion/hiding
+  updateActiveTimersList();
 }
 
 /**
@@ -200,5 +206,3 @@ export function showMenuUI() {
 
   console.log("Showing menu UI (timer creation interface)");
 }
-
-
