@@ -15,36 +15,17 @@ button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   color: #ef5b5b;
   text-decoration: none;
-  transition: 0.3s ease all;
+  transition: all 0.2s ease;
   z-index: 1;
   cursor: pointer;
   margin: 8px 0;
-}
-
-button:before {
-  transition: 0.4s all ease;
-  position: absolute;
-  top: 0;
-  left: 50%;
-  right: 50%;
-  bottom: 0;
-  opacity: 0;
-  content: '';
-  background-color: #ef5b5b;
-  z-index: -1;
+  background-color: transparent;
 }
 
 button:hover,
 button:focus {
+  background-color: #ef5b5b;
   color: white;
-}
-
-button:hover:before,
-button:focus:before {
-  transition: 0.4s all ease;
-  left: 0;
-  right: 0;
-  opacity: 1;
 }
 
 button:active {
@@ -58,8 +39,9 @@ button:active {
   width: 100%;
 }
 
-#pauseTimer:before {
-  background-color: rgba(255, 193, 7, 0.9);
+#pauseTimer:hover {
+  background-color: #ffc107;
+  color: #fff; /* Ensure text is visible on yellow */
 }
 
 /* Resume button styling */
@@ -68,8 +50,9 @@ button:active {
   color: #4caf50;
 }
 
-#pauseTimer.resume-button:before {
-  background-color: rgba(76, 175, 80, 0.9);
+#pauseTimer.resume-button:hover {
+  background-color: #4caf50;
+  color: white;
 }
 
 #extendTimer,
@@ -80,9 +63,10 @@ button:active {
   margin: 8px 0;
 }
 
-#extendTimer:before,
-#fastForwardTimer:before {
-  background-color: rgba(29, 105, 129, 0.9);
+#extendTimer:hover,
+#fastForwardTimer:hover {
+  background-color: #1d6981;
+  color: white;
 }
 
 /* Stop button styling - match pause button but in red */
@@ -96,8 +80,9 @@ button:active {
   background: none !important;
 }
 
-#stopTimer:before {
-  background-color: rgba(239, 91, 91, 0.9) !important;
+#stopTimer:hover {
+  background-color: #ef5b5b !important;
+  color: white !important;
 }
 
 /* Back button styling */
@@ -108,8 +93,9 @@ button:active {
   color: #9aa0a6;
 }
 
-.back-button:before {
-  background-color: rgba(154, 160, 166, 0.9);
+.back-button:hover {
+  background-color: #9aa0a6;
+  color: white;
 }
 
 /* Test notification button */
@@ -120,8 +106,9 @@ button:active {
   color: #5f6368;
 }
 
-#test-notification-button:before {
-  background-color: rgba(95, 99, 104, 0.9);
+#test-notification-button:hover {
+  background-color: #5f6368;
+  color: white;
 }
 
 /* Timer controls container - organize buttons in rows */

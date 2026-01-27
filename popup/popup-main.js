@@ -34,6 +34,7 @@ import {
   forceTestNotification,
 } from "./components/settings-panel.js";
 import { populateTabSelection } from "./components/tab-selector.js";
+import { toggleHistoryView, clearHistory } from "./components/history-list.js";
 
 /**
  * Start timer button click handler
@@ -374,6 +375,10 @@ function setupEventListeners() {
   // Sort change event
   const sortSelect = document.getElementById("timer-sort");
   sortSelect.addEventListener("change", debounce(updateActiveTimersList, 100));
+
+  // History controls
+  document.getElementById("view-history-btn").addEventListener("click", toggleHistoryView);
+  document.getElementById("clear-history-btn").addEventListener("click", clearHistory);
 }
 
 /**
@@ -390,6 +395,9 @@ function initialize() {
   document.getElementById("duration-input").style.display = "none";
   document.getElementById("tab-select-container").style.display = "none";
   document.getElementById("active-timers-container").style.display = "none";
+  document.getElementById("extension-container").style.display = "none";
+  document.getElementById("fast-forward-container").style.display = "none";
+  document.getElementById("history-container").style.display = "none";
 
   // Get the current tab first
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {

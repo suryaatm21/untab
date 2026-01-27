@@ -1,24 +1,28 @@
 import NotificationManager from './notification-manager.js';
+import { addToHistory } from './history-utils.js';
 
 // Store active timers (will be loaded from storage)
 const activeTimers = {};
+// Store close history (will be loaded from storage)
+let timerHistory = [];
 
 // Create notification manager instance
 const notificationManager = new NotificationManager();
 
 // Storage functions for persistent timer state
+// Storage functions for persistent timer state
 async function saveTimerState() {
   try {
-    await chrome.storage.local.set({ activeTimers });
-    console.log('Timer state saved to storage');
+    await chrome.storage.local.set({ activeTimers, timerHistory });
+    console.log('Timer state and history saved to storage');
   } catch (error) {
-    console.error('Failed to save timer state:', error);
+    console.error('Failed to save state:', error);
   }
 }
 
 async function loadTimerState() {
   try {
-    const result = await chrome.storage.local.get(['activeTimers']);
+    const result = await chrome.storage.local.get(['activeTimers', 'timerHistory']);
     if (result.activeTimers) {
       Object.assign(activeTimers, result.activeTimers);
       console.log('Loaded timer state from storage:', activeTimers);
@@ -26,8 +30,12 @@ async function loadTimerState() {
       // Restore alarms for active timers
       await restoreTimerAlarms();
     }
+    if (result.timerHistory) {
+      timerHistory = result.timerHistory;
+      console.log('Loaded history from storage, count:', timerHistory.length);
+    }
   } catch (error) {
-    console.error('Failed to load timer state:', error);
+    console.error('Failed to load state:', error);
   }
 }
 
@@ -700,6 +708,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === 'getAllTimers') {
     sendResponse({ success: true, timers: activeTimers });
     return true;
+  } else if (request.action === 'getHistory') {
+    sendResponse({ success: true, history: timerHistory });
+    return true;
+  } else if (request.action === 'clearHistory') {
+    timerHistory = [];
+    saveTimerState();
+    sendResponse({ success: true });
+    return true;
   } else if (request.action === 'updateWarningTimeForActiveTimers') {
     const { newWarningTime } = request;
     console.log(
@@ -900,6 +916,32 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           chrome.runtime.lastError.message,
         );
         return;
+      }
+
+      // Save to history before closing
+      try {
+        const historyRecord = {
+          url: tab.url,
+          title: tab.title,
+          favIconUrl: tab.favIconUrl,
+          closedAt: Date.now(),
+          duration: timerData ? timerData.duration : 0,
+          originalTabId: tabId
+        };
+        
+        // Fetch latest history to ensure we don't overwrite with stale data
+        chrome.storage.local.get(['timerHistory'], (result) => {
+           let currentHistory = result.timerHistory || [];
+           currentHistory = addToHistory(currentHistory, historyRecord);
+           
+           // Update global variable and storage
+           timerHistory = currentHistory;
+           chrome.storage.local.set({ timerHistory: currentHistory }, () => {
+             console.log('Added closed tab to history (persisted):', historyRecord.title);
+           });
+        });
+      } catch (hErr) {
+        console.error('Error saving history:', hErr);
       }
 
       try {
