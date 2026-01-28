@@ -10,7 +10,6 @@ let timerHistory = [];
 const notificationManager = new NotificationManager();
 
 // Storage functions for persistent timer state
-// Storage functions for persistent timer state
 async function saveTimerState() {
   try {
     await chrome.storage.local.set({ activeTimers, timerHistory });
