@@ -90,7 +90,7 @@ export function sanitizeHistoryRecord(record) {
  * @returns {string} Unique ID
  */
 export function generateHistoryId() {
-  return `history_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `history_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**
