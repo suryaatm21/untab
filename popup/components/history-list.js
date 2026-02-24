@@ -106,7 +106,7 @@ export function toggleHistoryView() {
   
   if (isVisible) {
     historyContainer.style.display = "none";
-    mainView.style.display = "block";
+    mainView.style.display = "flex";
     document.getElementById("view-history-btn").textContent = "View History";
   } else {
     historyContainer.style.display = "block";

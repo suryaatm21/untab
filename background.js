@@ -712,8 +712,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.action === 'clearHistory') {
     timerHistory = [];
-    saveTimerState();
-    sendResponse({ success: true });
+    saveTimerState().then(() => {
+      sendResponse({ success: true });
+    });
     return true;
   } else if (request.action === 'updateWarningTimeForActiveTimers') {
     const { newWarningTime } = request;
@@ -928,17 +929,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
           originalTabId: tabId
         };
         
-        // Fetch latest history to ensure we don't overwrite with stale data
-        chrome.storage.local.get(['timerHistory'], (result) => {
-           let currentHistory = result.timerHistory || [];
-           currentHistory = addToHistory(currentHistory, historyRecord);
-           
-           // Update global variable and storage
-           timerHistory = currentHistory;
-           chrome.storage.local.set({ timerHistory: currentHistory }, () => {
-             console.log('Added closed tab to history (persisted):', historyRecord.title);
-           });
-        });
+        // Update in-memory history synchronously
+        timerHistory = addToHistory(timerHistory, historyRecord);
+
+        // Persist updated state via centralized saver to avoid storage races
+        saveTimerState();
+
+        console.log('Added closed tab to history:', historyRecord.title);
       } catch (hErr) {
         console.error('Error saving history:', hErr);
       }

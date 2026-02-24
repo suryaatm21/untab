@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Untab Pomodoro Tab History",
+  "name": "Untab Pomodoro",
   "version": "1.0",
   "description": "Closes the current tab after a set timer to help manage media consumption.",
   "permissions": ["tabs", "alarms", "storage", "notifications"],
