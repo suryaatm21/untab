@@ -1,5 +1,5 @@
 import NotificationManager from './notification-manager.js';
-import { addToHistory } from './history-utils.js';
+import { addToHistory, removeFromHistory } from './history-utils.js';
 
 // Store active timers (will be loaded from storage)
 const activeTimers = {};
@@ -709,6 +709,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.action === 'getHistory') {
     sendResponse({ success: true, history: timerHistory });
+    return true;
+  } else if (request.action === 'restoreTabFromHistory') {
+    const { id, url } = request;
+
+    if (!id || !url) {
+      sendResponse({ success: false, error: 'History id and URL are required' });
+      return true;
+    }
+
+    chrome.tabs.create({ url, active: false }, (tab) => {
+      if (chrome.runtime.lastError) {
+        sendResponse({
+          success: false,
+          error: chrome.runtime.lastError.message,
+        });
+        return;
+      }
+
+      timerHistory = removeFromHistory(timerHistory, id);
+
+      saveTimerState()
+        .then(() => {
+          sendResponse({ success: true, tabId: tab?.id });
+        })
+        .catch((error) => {
+          console.error('Failed to save history after restore:', error);
+          sendResponse({
+            success: false,
+            error: error.message || 'Failed to persist history update',
+          });
+        });
+    });
     return true;
   } else if (request.action === 'clearHistory') {
     timerHistory = [];

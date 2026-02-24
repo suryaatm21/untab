@@ -314,5 +314,3 @@ export function backToTimersList() {
   // Hide stopwatch
   document.querySelector(".stopwatch-bar").style.display = "none";
 }
-
-
